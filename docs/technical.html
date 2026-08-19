@@ -142,7 +142,7 @@ docs/                 application, technical, and progress HTML</pre>
         <tr><td>credit_ledger_entries</td><td>Credit/debit history with balance_after</td></tr>
       </tbody>
     </table>
-    <p>Net weight is <code>gross − stone − other_deduction</code>, quantized to 3 decimals. Negative net weight is rejected with HTTP 422.</p>
+    <p>Net weight is <code>gross − stone − other_deduction</code> on the API (Create Tag UI sends gross and stone; net preview uses gross − stone). Negative net weight is rejected with HTTP 422.</p>
 
     <h2>HTTP API</h2>
     <p>Base URL defaults to <code>http://localhost:8000</code>. Interactive docs: <code>/docs</code>. Authenticated routes send <code>Authorization: Bearer &lt;token&gt;</code>.</p>
@@ -185,11 +185,12 @@ docs/                 application, technical, and progress HTML</pre>
     <ul>
       <li>Shop UI views: create, history, billing, settings (shop / tag / items).</li>
       <li>Responsive layout: fixed sidebar on desktop; slide-out menu with backdrop on screens under 900px; stacked grids and horizontal table scroll on smaller widths.</li>
-      <li>Create Tag: item dropdown from <code>/settings/items</code>, Gold/Silver radios, live net weight, Save / Save &amp; Print / Test Print.</li>
+      <li>Create Tag: item dropdown from <code>/settings/items</code>, Gold/Silver radios, gross and stone weights, live net weight (gross − stone), Save / Save &amp; Print / Test Print.</li>
+      <li>Preview renders one <code>PrintableTag</code>: left panel weights, centre fold mark, right panel category + item + Code 128 + tag number. Labelled “single side, fold at centre”.</li>
       <li>Shop logo is uploaded as <code>multipart/form-data</code>. The API returns <code>logo_url</code> (<code>/uploads/logos/{shop_id}.ext</code>). The sidebar shows it; the hang tag does not.</li>
       <li>Path <code>/admin-portal</code> swaps in the admin shell (same SPA, no router library).</li>
-      <li>Preview sizes two hang-tag faces from shop millimetre fields. Back barcode is Code 128 in <code>frontend/src/barcode.ts</code>.</li>
-      <li>Print uses CSS <code>@media print</code> and prints front then back as two pages. Print rules hide navigation chrome and keep tag colours with <code>print-color-adjust</code>.</li>
+      <li>Preview sizes one hang-tag face from shop millimetre fields. Code 128 barcode in <code>frontend/src/barcode.ts</code>.</li>
+      <li>Print uses CSS <code>@media print</code> — one page (<code>@page { size: 80mm 18mm }</code>). Print rules hide navigation chrome and keep tag colours with <code>print-color-adjust</code>.</li>
       <li><code>frontend/src/api.ts</code> wraps fetch; <code>VITE_API_BASE_URL</code> overrides the API host.</li>
     </ul>
 
@@ -250,25 +251,26 @@ docs/                 application, technical, and progress HTML</pre>
       </thead>
       <tbody>
         <tr><td>Total tag width</td><td>~72–80 mm</td><td>—</td></tr>
-        <tr><td>Tag height</td><td>~15 mm</td><td>—</td></tr>
-        <tr><td>Main printable face</td><td>~50–55 mm × ~13–15 mm</td><td>~48–53 mm × ~11–13 mm (1–2 mm margin)</td></tr>
+        <tr><td>Tag height</td><td>~15–18 mm</td><td>—</td></tr>
+        <tr><td>Main printable face</td><td>~50–55 mm × ~15–18 mm</td><td>~48–53 mm × ~13–16 mm (1–2 mm margin)</td></tr>
         <tr><td>Neck / bridge</td><td>~3–5 mm wide</td><td>Not printed</td></tr>
         <tr><td>Tail</td><td>~15–22 mm long</td><td>Not printed</td></tr>
       </tbody>
     </table>
-    <p><strong>Suggested Tag Settings defaults:</strong> <code>tag_width_mm</code> = 80, <code>tag_height_mm</code> = 15 (model default is 13 — update per shop), <code>font_size_pt</code> = 7–8, offsets = 0 then tune on test print. Barcode target height in CSS: ~4.5–6 mm at 203 DPI.</p>
+    <p><strong>Suggested Tag Settings defaults:</strong> <code>tag_width_mm</code> = 80, <code>tag_height_mm</code> = 18 (shop model default), <code>font_size_pt</code> = 7–8, offsets = 0 then tune on test print. Barcode target height in CSS: ~4.5–6 mm at 203 DPI.</p>
 
     <h3>Mapping to frontend layout</h3>
-    <p><code>PrintableTag</code> in <code>frontend/src/App.tsx</code> renders a horizontal strip:</p>
-<pre>grid-template-columns: minmax(0, 1fr) 3mm 22mm;
-  → tag-main-body (printable) | tag-neck | tag-tail</pre>
-    <p>On an 80 mm-wide tag, the main body is roughly <strong>55 mm</strong> (80 − 3 − 22). Weights and barcode render inside <code>.tag-main-body</code> only. Front and back are separate print pages (<code>break-after: page</code> in <code>styles.css</code>).</p>
-    <p>Print CSS currently hardcodes <code>@page { size: 80mm 13mm }</code>. Per-shop <code>tag_width_mm</code> and <code>tag_height_mm</code> apply to the on-screen preview but not yet to <code>@page</code> — calibration should account for this gap until print CSS is made dynamic.</p>
+    <p><code>PrintableTag</code> in <code>frontend/src/App.tsx</code> renders a horizontal barbell strip with a single printable face:</p>
+<pre>print-tag grid:  [ tag-printable-face ] | tag-neck (2.5mm) | tag-tail (18mm)
+
+tag-printable-face grid:  tag-panel-left (weights) | tag-fold-mark | tag-panel-right (item + barcode)</pre>
+    <p>On an 80 mm-wide tag, the printable face occupies the left portion; neck and tail are structural (not printed). Weights and barcode share one printed side; the user folds on <code>.tag-fold-mark</code>. Item label uses category + item name (e.g. “Gold Ring”).</p>
+    <p>Print CSS uses <code>@page { size: 80mm 18mm }</code>. Per-shop <code>tag_width_mm</code> and <code>tag_height_mm</code> drive the on-screen preview; <code>@page</code> is not yet dynamic — calibration should account for this until print CSS follows shop settings.</p>
 
     <h3>Counter PC / driver settings</h3>
     <ul>
       <li>Media type: gap or black mark (match the roll)</li>
-      <li>Label size: custom ~80 mm × 15 mm</li>
+      <li>Label size: custom ~80 mm × 18 mm</li>
       <li>Orientation: landscape for the strip</li>
       <li>Scale: 100% — do not fit to page</li>
       <li>Margins: none or minimum</li>
@@ -277,8 +279,8 @@ docs/                 application, technical, and progress HTML</pre>
 
     <h2>TVS LP 46 NEO browser-print workflow</h2>
     <p>The app is built for the <strong>TVS LP 46 NEO</strong> label printer. Printing uses the browser print dialog, not direct USB from the server. The operator selects <strong>TVS LP 46 NEO</strong> in that dialog.</p>
-    <p>Create Tag renders two <code>PrintableTag</code> faces in a <code>print-bundle</code>. Print CSS keeps only that bundle visible. Page 1 is front weights; page 2 is back item + Code 128 of <code>tag_number</code> + the human-readable number. The hanging tab is empty on both faces.</p>
-    <p>Millimetre layout comes from <strong>Settings → Tag Settings</strong> (<code>tag_width_mm</code>, <code>tag_height_mm</code>, <code>font_size_pt</code>, <code>horizontal_offset_mm</code>, <code>vertical_offset_mm</code>). Shops calibrate these on the TVS LP 46 NEO until preview and print align. Shop logos are stored under <code>backend/uploads/logos/</code> and served at <code>/uploads</code>; that folder is gitignored.</p>
+    <p>Create Tag renders one <code>PrintableTag</code> in a <code>print-bundle</code>. Print CSS keeps only that bundle visible. One page prints the full face: left weights, centre fold mark, right item + Code 128 of <code>tag_number</code> + the human-readable number. Neck and tail are not printed.</p>
+    <p>Millimetre layout comes from <strong>Settings → Tag Settings</strong> (<code>tag_width_mm</code>, <code>tag_height_mm</code>, <code>font_size_pt</code>, offsets). Tag Settings also shows printer model and “single-side print, fold at centre” guidance. Shop logos live under <code>backend/uploads/logos/</code> (gitignored).</p>
 
     <h2>Local run</h2>
     <p>Without Docker: venv + <code>uvicorn app.main:app --reload</code> in <code>backend/</code>, and <code>npm run dev</code> in <code>frontend/</code>. With Docker: <code>docker compose up --build</code> starts Postgres 16, API on 8000, Vite on 5173. SQLite schema migrations for extra shop columns are applied in <code>create_database()</code> for local files only.</p>
@@ -288,7 +290,7 @@ docs/                 application, technical, and progress HTML</pre>
       <li>Razorpay Orders/payments are stubbed with local order/payment ids.</li>
       <li>No Windows USB print agent yet.</li>
       <li>Operator role exists on the model but registration only creates owners.</li>
-      <li>Physical TVS LP 46 NEO calibration of front/back hang-tag print is still pending.</li>
+      <li>Dynamic <code>@page</code> size from shop Tag Settings (currently fixed at 80 × 18 mm).</li>
     </ul>
   </main>
   <footer>

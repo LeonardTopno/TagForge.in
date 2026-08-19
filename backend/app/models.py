@@ -48,7 +48,7 @@ class Shop(Base):
     tag_prefix: Mapped[str] = mapped_column(String(12), default="T", nullable=False)
     next_tag_number: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     tag_width_mm: Mapped[Decimal] = mapped_column(Numeric(6, 2), default=Decimal("80.00"), nullable=False)
-    tag_height_mm: Mapped[Decimal] = mapped_column(Numeric(6, 2), default=Decimal("13.00"), nullable=False)
+    tag_height_mm: Mapped[Decimal] = mapped_column(Numeric(6, 2), default=Decimal("18.00"), nullable=False)
     font_size_pt: Mapped[Decimal] = mapped_column(Numeric(5, 2), default=Decimal("8.00"), nullable=False)
     horizontal_offset_mm: Mapped[Decimal] = mapped_column(Numeric(6, 2), default=Decimal("0.00"), nullable=False)
     vertical_offset_mm: Mapped[Decimal] = mapped_column(Numeric(6, 2), default=Decimal("0.00"), nullable=False)

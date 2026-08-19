@@ -11,17 +11,39 @@ Multi-tenant jewellery tag printing app for shops using a **TVS LP 46 NEO browse
 
 ## First Milestone
 
-A shop can register, create jewellery weight tags, preview front and back hang-tag faces at millimetre size, save, reprint, and tune print layout for the TVS LP 46 NEO.
+A shop can register, create jewellery weight tags, preview a single-side hang tag at millimetre size, save, reprint, and tune print layout for the TVS LP 46 NEO.
 
-The back face encodes the tag number as Code 128. Print sends front then back as two browser pages.
+The printable face shows weights on the left, a centre fold mark, and item plus Code 128 barcode on the right. Fold the tag so the sticker backs meet. One browser print page — not direct USB.
+
+## Printer
+
+**TVS LP 46 NEO** (TVS Electronics · LP 46 NEO) — 203 DPI desktop label printer for jewellery barbell hang tags.
+
+Printing uses the **browser print dialog** on the counter PC or tablet where the printer is installed — not direct USB from the hosted app. When the dialog opens, select **TVS LP 46 NEO** as the printer. Use scale **100%**, minimum margins, and no headers or footers.
+
+Tag paper: white glossy synthetic jewellery barbell tags (thermal transfer ribbon). Default label size in the app: **80 × 18 mm**.
+
+## Print Preview
+
+On **Create Tag**, the **Actual Preview** panel shows the hang tag at the shop’s millimetre size before printing. The caption reads `{width} x {height} mm · single side, fold at centre`.
+
+The preview matches what prints on one browser page:
+
+| Area | Content |
+| --- | --- |
+| Left panel | Grs.Wt, Stn.Wt, Nt.Wt |
+| Centre | Dashed fold mark — fold here after printing so sticker backs meet |
+| Right panel | Category + item name (e.g. GOLD RING), Code 128 barcode, tag number |
+
+The barbell neck and tail to the right of the white face are structural only and are not printed. **Save & Print** and **Test Print** send this preview to the browser print dialog. Tune width, height, font, and X/Y offsets under **Settings → Tag Settings** until preview and physical tag align.
 
 ## Printing (TVS LP 46 NEO)
 
-This app is built for the **TVS LP 46 NEO** label printer.
+This app is built for the **TVS LP 46 NEO** label printer (see [Printer](#printer) and [Print Preview](#print-preview) above).
 
-Printing goes through the **browser print dialog** — not direct USB from the hosted app. When you print, choose **TVS LP 46 NEO** in that dialog. Page 1 is the tag front (weights); page 2 is the back (item name, barcode, tag number).
+Printing goes through the **browser print dialog** — not direct USB from the hosted app. When you print, choose **TVS LP 46 NEO** in that dialog. One page prints the full tag face shown in Actual Preview. Fold on the centre line so the adhesive backs meet.
 
-Tag size and offsets are set in **millimetres** under **Settings → Tag Settings** (width, height, font, horizontal and vertical offsets). Adjust those values and test-print on the TVS LP 46 NEO until the on-screen preview matches the physical hang tag.
+Tag size and offsets are set in **millimetres** under **Settings → Tag Settings** (width, height, font, horizontal and vertical offsets). The screen also shows the target printer and tag paper type. Default starting size is **80 × 18 mm**. Adjust values and test-print on the TVS LP 46 NEO until the preview matches the physical label.
 
 ## Docs
 
@@ -178,8 +200,11 @@ Local purchases can be confirmed in the app for testing. Replace that path with 
 
 ## Notes
 
-- The app targets the **TVS LP 46 NEO**. Printing uses the browser print dialog; select that printer when prompted. There is no direct USB path from the web app.
-- Calibrate layout in **Settings → Tag Settings**: millimetre width, height, font, and X/Y offsets per shop.
+- **Printer:** TVS LP 46 NEO (TVS Electronics). Select it in the browser print dialog — no direct USB path from the web app.
+- **Print Preview:** Create Tag → **Actual Preview** shows the single-side layout at millimetre size before you print.
+- **Single-side print, fold at centre** — weights and barcode print on one face; fold on the dashed centre mark.
+- Calibrate layout in **Settings → Tag Settings**: millimetre width, height (default 18 mm), font, and X/Y offsets. Reference hardware notes are in `docs/application.html`.
+- Create Tag uses item catalogue + Gold/Silver, gross and stone weights; net weight = gross − stone.
 - Each shop keeps an item catalogue (Ring, Chain, and so on) used as the Create Tag dropdown.
 - Shop logos are uploaded in Settings and shown in the sidebar. They are not printed on the hang tag.
 - The shop UI uses a collapsible menu on narrow screens, scrollable tables, and touch-friendly controls.

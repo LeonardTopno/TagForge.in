@@ -36,6 +36,13 @@ function formatWeight(value: string | number) {
   return Number.isFinite(parsed) ? parsed.toFixed(3) : '0.000';
 }
 
+function tagItemLabel(itemName: string, category: string | null | undefined) {
+  const item = itemName.trim();
+  const metal = (category ?? '').trim();
+  if (!metal) return item;
+  return `${metal} ${item}`.replace(/\s+/g, ' ').trim();
+}
+
 function calculateNet(form: TagForm) {
   return formatWeight(Number(form.gross_weight || 0) - Number(form.stone_weight || 0));
 }
@@ -619,24 +626,17 @@ function TagPreview({ tag, shop }: { tag: JewelleryTag; shop: Shop }) {
       <div className="panel-title">
         <h2>Actual Preview</h2>
         <span>
-          {shop.tag_width_mm} x {shop.tag_height_mm} mm
+          {shop.tag_width_mm} x {shop.tag_height_mm} mm · single side, fold at centre
         </span>
       </div>
-      <div className="tag-stage tag-stage-pair print-bundle">
-        <figure className="tag-figure">
-          <figcaption>Front side</figcaption>
-          <PrintableTag tag={tag} shop={shop} face="front" />
-        </figure>
-        <figure className="tag-figure">
-          <figcaption>Back side</figcaption>
-          <PrintableTag tag={tag} shop={shop} face="back" />
-        </figure>
+      <div className="tag-stage print-bundle">
+        <PrintableTag tag={tag} shop={shop} />
       </div>
     </div>
   );
 }
 
-function PrintableTag({ tag, shop, face }: { tag: JewelleryTag; shop: Shop; face: 'front' | 'back' }) {
+function PrintableTag({ tag, shop }: { tag: JewelleryTag; shop: Shop }) {
   const style = {
     width: `${shop.tag_width_mm}mm`,
     height: `${shop.tag_height_mm}mm`,
@@ -646,9 +646,9 @@ function PrintableTag({ tag, shop, face }: { tag: JewelleryTag; shop: Shop; face
 
   return (
     <article className="print-tag" style={style}>
-      <div className="tag-main-body">
-        {face === 'front' ? (
-          <div className="tag-weight-grid" aria-label="Front of jewellery tag">
+      <div className="tag-printable-face">
+        <div className="tag-panel tag-panel-left" aria-label="Left panel: weights">
+          <div className="tag-weight-grid">
             <span>Grs.Wt</span>
             <span>:</span>
             <strong>{formatWeight(tag.gross_weight)}</strong>
@@ -659,13 +659,15 @@ function PrintableTag({ tag, shop, face }: { tag: JewelleryTag; shop: Shop; face
             <span>:</span>
             <strong>{formatWeight(tag.net_weight)}</strong>
           </div>
-        ) : (
-          <div className="tag-back" aria-label="Back of jewellery tag">
-            <span className="tag-back-item">{tag.item_name.toUpperCase()}</span>
+        </div>
+        <div className="tag-fold-mark" aria-hidden="true" title="Fold line" />
+        <div className="tag-panel tag-panel-right" aria-label="Right panel: item, barcode, tag number">
+          <div className="tag-back">
+            <span className="tag-back-item">{tagItemLabel(tag.item_name, tag.category).toUpperCase()}</span>
             <TagBarcode value={tag.tag_number} />
             <span className="tag-back-number">{tag.tag_number}</span>
           </div>
-        )}
+        </div>
       </div>
       <div className="tag-neck" aria-hidden="true" />
       <div className="tag-tail" aria-hidden="true" />
@@ -708,7 +710,7 @@ function HistoryView({ tags, onReprint }: { tags: JewelleryTag[]; onReprint: (ta
           {tags.map((tag) => (
             <tr key={tag.id}>
               <td>{tag.tag_number}</td>
-              <td>{tag.item_name}</td>
+              <td>{tagItemLabel(tag.item_name, tag.category)}</td>
               <td>{formatDateTime(tag.created_at)}</td>
               <td>{formatWeight(tag.gross_weight)}</td>
               <td>{formatWeight(tag.net_weight)}</td>
@@ -1337,12 +1339,12 @@ function SettingsView({
             </div>
             <div>
               <span>Tag paper type</span>
-              <strong>Jewellery hang tag (folded butterfly label)</strong>
+              <strong>Jewellery hang tag · single-side print, fold at centre (sticker back)</strong>
             </div>
           </div>
           <p className="settings-help">
-            Printing uses the browser print dialog. Select <strong>TVS LP 46 NEO</strong> as the printer.
-            Tune millimetre size and offsets below to match your hang-tag stock.
+            Both panels print on the same face. Fold on the centre mark so the sticker backs meet.
+            Select <strong>TVS LP 46 NEO</strong> in the browser print dialog, then tune millimetre size and offsets below.
           </p>
           <div className="form-grid compact">
             <label>
