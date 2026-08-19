@@ -40,6 +40,10 @@ class Shop(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(160), nullable=False)
+    address: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    phone_number: Mapped[str] = mapped_column(String(20), default="", nullable=False)
+    gst_no: Mapped[str] = mapped_column(String(20), default="", nullable=False)
+    logo_path: Mapped[str | None] = mapped_column(String(255))
     short_name: Mapped[str] = mapped_column(String(40), nullable=False)
     tag_prefix: Mapped[str] = mapped_column(String(12), default="T", nullable=False)
     next_tag_number: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
@@ -58,6 +62,7 @@ class Shop(Base):
     tags: Mapped[list["JewelleryTag"]] = relationship(back_populates="shop")
     purchases: Mapped[list["PlanPurchase"]] = relationship(back_populates="shop")
     ledger_entries: Mapped[list["CreditLedgerEntry"]] = relationship(back_populates="shop")
+    catalogue_items: Mapped[list["ShopItem"]] = relationship(back_populates="shop")
 
 
 class User(Base):
@@ -171,3 +176,16 @@ class CreditLedgerEntry(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     shop: Mapped[Shop] = relationship(back_populates="ledger_entries")
+
+
+class ShopItem(Base):
+    __tablename__ = "shop_items"
+    __table_args__ = (UniqueConstraint("shop_id", "name", name="uq_shop_item_name"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    shop_id: Mapped[int] = mapped_column(ForeignKey("shops.id"), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    shop: Mapped[Shop] = relationship(back_populates="catalogue_items")

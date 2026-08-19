@@ -9,6 +9,7 @@ import type {
   JewelleryTag,
   PlanPurchase,
   Shop,
+  ShopItem,
   TagForm,
 } from './types';
 
@@ -27,13 +28,17 @@ export function clearAuthToken() {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const headers = new Headers(options.headers);
+  if (authToken) {
+    headers.set('Authorization', `Bearer ${authToken}`);
+  }
+  if (!(options.body instanceof FormData) && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-      ...options.headers,
-    },
+    headers,
   });
 
   if (!response.ok) {
@@ -41,7 +46,19 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     throw new Error(error.detail ?? 'Request failed');
   }
 
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
   return response.json();
+}
+
+export function shopLogoSrc(logoUrl?: string | null) {
+  if (!logoUrl) return '';
+  if (logoUrl.startsWith('blob:') || logoUrl.startsWith('http://') || logoUrl.startsWith('https://')) {
+    return logoUrl;
+  }
+  return `${API_BASE_URL}${logoUrl}`;
 }
 
 export const api = {
@@ -76,8 +93,28 @@ export const api = {
   settings() {
     return request<Shop>('/settings');
   },
-  updateSettings(payload: Omit<Shop, 'id' | 'name' | 'next_tag_number'>) {
+  updateSettings(payload: Omit<Shop, 'id' | 'next_tag_number' | 'logo_url'>) {
     return request<Shop>('/settings', { method: 'PUT', body: JSON.stringify(payload) });
+  },
+  uploadShopLogo(file: File) {
+    const body = new FormData();
+    body.append('file', file);
+    return request<Shop>('/settings/logo', { method: 'POST', body });
+  },
+  deleteShopLogo() {
+    return request<Shop>('/settings/logo', { method: 'DELETE' });
+  },
+  listShopItems() {
+    return request<ShopItem[]>('/settings/items');
+  },
+  createShopItem(name: string) {
+    return request<ShopItem>('/settings/items', { method: 'POST', body: JSON.stringify({ name }) });
+  },
+  updateShopItem(itemId: number, name: string) {
+    return request<ShopItem>(`/settings/items/${itemId}`, { method: 'PUT', body: JSON.stringify({ name }) });
+  },
+  deleteShopItem(itemId: number) {
+    return request<void>(`/settings/items/${itemId}`, { method: 'DELETE' });
   },
   billingSummary() {
     return request<BillingSummary>('/billing/summary');

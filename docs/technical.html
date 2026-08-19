@@ -84,9 +84,10 @@
     <div class="wrap">
       <p class="eyebrow">Engineering</p>
       <h1>Technical overview</h1>
-      <p>Architecture, data model, API surface, configuration, and how credits and printing are implemented in this repository.</p>
+      <p>Architecture, data model, API surface, configuration, and how credits and the TVS LP 46 NEO browser-print workflow are implemented in this repository.</p>
       <nav>
         <a href="application.html">Application overview</a>
+        <a href="progress.html">Status and plans</a>
         <a class="ghost" href="../README.md">README</a>
       </nav>
     </div>
@@ -100,7 +101,7 @@
       </article>
       <article class="card">
         <h3>Frontend</h3>
-        <p>React 19, Vite 6, TypeScript. Single-page UI in <code>frontend/src/App.tsx</code>. Icons from lucide-react. Auth token in <code>localStorage</code>.</p>
+        <p>React 19, Vite 6, TypeScript. Single-page UI in <code>frontend/src/App.tsx</code>. Code 128 bars in <code>barcode.ts</code>. Icons from lucide-react. Auth token in <code>localStorage</code>.</p>
       </article>
       <article class="card">
         <h3>Data and runtimes</h3>
@@ -110,10 +111,11 @@
 
     <h2>Repository layout</h2>
 <pre>backend/app/          FastAPI app, models, schemas, security
+backend/uploads/     Shop logos (gitignored)
 backend/.env.example  Runtime configuration
-frontend/src/         React UI, API client, types, print CSS
+frontend/src/         React UI, API client, types, Code 128, print CSS
 docker-compose.yml    postgres, backend, frontend
-docs/                 These HTML overviews</pre>
+docs/                 application, technical, and progress HTML</pre>
 
     <h2>Tenancy and auth</h2>
     <ul>
@@ -130,9 +132,10 @@ docs/                 These HTML overviews</pre>
         <tr><th>Table</th><th>Role</th></tr>
       </thead>
       <tbody>
-        <tr><td>shops</td><td>Tenant identity, tag numbering, millimetre print layout, credit balance, expiry, unlimited-until</td></tr>
+        <tr><td>shops</td><td>Tenant identity, address/phone/GST, optional logo file path, tag numbering, millimetre print layout, credit balance, expiry, unlimited-until</td></tr>
         <tr><td>users</td><td>Email, password hash, role, shop foreign key</td></tr>
-        <tr><td>jewellery_tags</td><td>Item, purity, weights, copies, print_count; unique <code>(shop_id, tag_number)</code></td></tr>
+        <tr><td>shop_items</td><td>Per-shop item catalogue (unique name per shop); seeded with common jewellery types</td></tr>
+        <tr><td>jewellery_tags</td><td>Item, category, purity, weights, copies, print_count; unique <code>(shop_id, tag_number)</code></td></tr>
         <tr><td>print_logs</td><td>Who printed which tag, copies, timestamp</td></tr>
         <tr><td>billing_plans</td><td>Seeded Starter / Growth / Pro plans</td></tr>
         <tr><td>plan_purchases</td><td>Pending/paid purchases; placeholder Razorpay ids for local testing</td></tr>
@@ -154,9 +157,11 @@ docs/                 These HTML overviews</pre>
         <tr><td><span class="method">GET</span> /me</td><td>Restore session</td></tr>
         <tr><td><span class="method">GET</span> /dashboard</td><td>Tag/print counts, recent tags, billing summary</td></tr>
         <tr><td><span class="method">GET</span> /tags</td><td>Last 100 tags; optional <code>search</code></td></tr>
-        <tr><td><span class="method">POST</span> /tags</td><td>Allocate tag number, debit credits for copies</td></tr>
-        <tr><td><span class="method">POST</span> /tags/{id}/print</td><td>Log print; debit on reprint if print_count &gt; 0</td></tr>
-        <tr><td><span class="method">GET/PUT</span> /settings</td><td>Shop layout and prefix</td></tr>
+        <tr><td><span class="method">POST</span> /tags</td><td>Allocate tag number, debit 1 credit</td></tr>
+        <tr><td><span class="method">POST</span> /tags/{id}/print</td><td>Log print; no credit debit</td></tr>
+        <tr><td><span class="method">GET/PUT</span> /settings</td><td>Shop profile and millimetre layout</td></tr>
+        <tr><td><span class="method">POST/DELETE</span> /settings/logo</td><td>Upload or remove shop logo (JPG, PNG, WEBP, GIF, max 5 MB)</td></tr>
+        <tr><td><span class="method">GET/POST/PUT/DELETE</span> /settings/items</td><td>Item catalogue for the Create Tag dropdown</td></tr>
         <tr><td><span class="method">GET</span> /billing/summary|plans|ledger</td><td>Balance and catalogue</td></tr>
         <tr><td><span class="method">POST</span> /billing/purchases</td><td>Create local test order</td></tr>
         <tr><td><span class="method">POST</span> /billing/purchases/{id}/confirm</td><td>Mark paid and grant credits or unlimited window</td></tr>
@@ -165,22 +170,26 @@ docs/                 These HTML overviews</pre>
         <tr><td><span class="method">POST</span> /admin/tenants/{id}/credit-adjustments</td><td>Set/delta credits, validity, unlimited</td></tr>
       </tbody>
     </table>
-    <p>Insufficient credits return HTTP 402. Duplicate email returns 409. Admin without role <code>admin</code> returns 403.</p>
+    <p>Insufficient credits return HTTP 402. Duplicate email or duplicate item name returns 409. Admin without role <code>admin</code> returns 403. Oversized logos return 413.</p>
 
     <h2>Credits algorithm</h2>
     <ul>
-      <li><code>charge_tag_credits</code> no-ops when copies ≤ 0 or <code>unlimited_until</code> is still in the future.</li>
+      <li><code>charge_tag_credits</code> no-ops when credits ≤ 0 or <code>unlimited_until</code> is still in the future.</li>
       <li>Expired <code>credits_expire_at</code> zeros the shop balance before charging.</li>
-      <li>Create tag always charges <code>copies</code>. Print charges again only when <code>print_count &gt; 0</code> (reprint).</li>
+      <li>Create tag charges 1 credit. Print and reprint do not charge.</li>
       <li>Paid credit plans add credits and extend expiry; unlimited plans extend <code>unlimited_until</code>.</li>
       <li>Tag price and signup grant come from settings: <code>TAG_PRICE_INR</code>, <code>FREE_REGISTRATION_CREDITS</code>.</li>
     </ul>
 
     <h2>Frontend behaviour</h2>
     <ul>
-      <li>Shop UI views: create, history, billing, settings.</li>
+      <li>Shop UI views: create, history, billing, settings (shop / tag / items).</li>
+      <li>Responsive layout: fixed sidebar on desktop; slide-out menu with backdrop on screens under 900px; stacked grids and horizontal table scroll on smaller widths.</li>
+      <li>Create Tag: item dropdown from <code>/settings/items</code>, Gold/Silver radios, live net weight, Save / Save &amp; Print / Test Print.</li>
+      <li>Shop logo is uploaded as <code>multipart/form-data</code>. The API returns <code>logo_url</code> (<code>/uploads/logos/{shop_id}.ext</code>). The sidebar shows it; the hang tag does not.</li>
       <li>Path <code>/admin-portal</code> swaps in the admin shell (same SPA, no router library).</li>
-      <li>Preview sizes the label from shop millimetre fields; print uses CSS <code>@media print</code>.</li>
+      <li>Preview sizes two hang-tag faces from shop millimetre fields. Back barcode is Code 128 in <code>frontend/src/barcode.ts</code>.</li>
+      <li>Print uses CSS <code>@media print</code> and prints front then back as two pages. Print rules hide navigation chrome and keep tag colours with <code>print-color-adjust</code>.</li>
       <li><code>frontend/src/api.ts</code> wraps fetch; <code>VITE_API_BASE_URL</code> overrides the API host.</li>
     </ul>
 
@@ -200,19 +209,22 @@ docs/                 These HTML overviews</pre>
     </table>
     <p>Loaded in <code>backend/app/config.py</code> via Pydantic Settings from <code>backend/.env</code>.</p>
 
+    <h2>TVS LP 46 NEO browser-print workflow</h2>
+    <p>The target printer is the <strong>TVS LP 46 NEO</strong>. Create Tag renders two <code>PrintableTag</code> faces in a <code>print-bundle</code>. Print CSS keeps only that bundle visible. Page 1 is front weights; page 2 is back item + Code 128 of <code>tag_number</code> + the human-readable number. The hanging tab is empty on both faces. Offsets come from shop settings. The operator selects the TVS LP 46 NEO in the browser print dialog. Shop logos are stored under <code>backend/uploads/logos/</code> and served at <code>/uploads</code>; that folder is gitignored.</p>
+
     <h2>Local run</h2>
     <p>Without Docker: venv + <code>uvicorn app.main:app --reload</code> in <code>backend/</code>, and <code>npm run dev</code> in <code>frontend/</code>. With Docker: <code>docker compose up --build</code> starts Postgres 16, API on 8000, Vite on 5173. SQLite schema migrations for extra shop columns are applied in <code>create_database()</code> for local files only.</p>
 
     <h2>Known gaps</h2>
     <ul>
       <li>Razorpay Orders/payments are stubbed with local order/payment ids.</li>
-      <li>No barcode generation (by product requirement for this milestone).</li>
       <li>No Windows USB print agent yet.</li>
       <li>Operator role exists on the model but registration only creates owners.</li>
+      <li>Physical TVS LP 46 NEO calibration of front/back hang-tag print is still pending.</li>
     </ul>
   </main>
   <footer>
-    <div class="wrap">Jewellery Tag Printer · <a href="application.html">Application overview</a></div>
+    <div class="wrap">Jewellery Tag Printer · <a href="application.html">Application overview</a> · <a href="progress.html">Status and plans</a></div>
   </footer>
 </body>
 </html>

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jewellery Tag Printer — Status and Plans</title>
+  <style>
+    :root {
+      --ink: #1f2933;
+      --muted: #5b6773;
+      --navy: #20313f;
+      --gold: #b8893a;
+      --paper: #f4f1eb;
+      --card: #ffffff;
+      --line: #d8d0c4;
+      --done: #1d6a4f;
+      --next: #8a5a12;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font: 16px/1.55 Inter, ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+    }
+    header {
+      background: var(--navy);
+      color: #f8fafc;
+      padding: 48px 24px 40px;
+    }
+    header .wrap, main, footer .wrap { max-width: 980px; margin: 0 auto; }
+    .eyebrow { letter-spacing: 0.12em; text-transform: uppercase; font-size: 12px; color: #c4b08a; margin: 0 0 10px; }
+    h1 { margin: 0 0 12px; font-size: 2.2rem; font-weight: 650; }
+    header p { margin: 0; max-width: 70ch; color: #d5dde6; }
+    nav { margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; }
+    nav a {
+      color: #20313f;
+      background: #fff;
+      text-decoration: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    nav a.ghost { background: transparent; color: #f8fafc; border: 1px solid #4b6275; }
+    main { padding: 40px 24px 64px; }
+    h2 { margin: 36px 0 12px; font-size: 1.35rem; }
+    h3 { margin: 0 0 6px; font-size: 1.05rem; }
+    p, li { color: var(--muted); }
+    .meta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 8px 0 0;
+    }
+    .pill {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: 12px;
+      font-weight: 650;
+    }
+    .pill.done { background: #d8efe4; color: var(--done); }
+    .pill.next { background: #efe3cd; color: var(--next); }
+    .flow { display: grid; gap: 10px; margin: 16px 0 0; }
+    .step {
+      display: grid;
+      grid-template-columns: 88px 1fr;
+      gap: 12px;
+      align-items: start;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+    .status {
+      font-size: 12px;
+      font-weight: 750;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding-top: 4px;
+    }
+    .status.done { color: var(--done); }
+    .status.next { color: var(--next); }
+    .status.later { color: #6b7280; }
+    .diagram-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px 12px 8px;
+      margin: 16px 0 8px;
+      overflow-x: auto;
+    }
+    .diagram-card svg { display: block; width: 100%; min-width: 720px; height: auto; }
+    .legend {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin: 8px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .legend span { display: flex; align-items: center; gap: 8px; }
+    .swatch {
+      width: 14px; height: 14px; border-radius: 4px; border: 1px solid var(--line);
+    }
+    .swatch.shop { background: #20313f; }
+    .swatch.print { background: #b8893a; }
+    .swatch.bill { background: #1d6a4f; }
+    .swatch.admin { background: #4b6275; }
+    footer { border-top: 1px solid var(--line); padding: 20px 24px 32px; color: var(--muted); font-size: 14px; }
+    footer a { color: var(--navy); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <p class="eyebrow">Project tracker</p>
+      <h1>Done and still to do</h1>
+      <p>Finalised work in this repository, plus the planned next steps. Printing v1 is the TVS LP 46 NEO browser-print workflow. Update this page whenever a milestone lands or a plan changes.</p>
+      <div class="meta">
+        <span class="pill done">Last updated 20 Aug 2026</span>
+        <span class="pill next">Keep this file current</span>
+      </div>
+      <nav>
+        <a href="application.html">Application overview</a>
+        <a class="ghost" href="technical.html">Technical overview</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <h2 id="application-flow">Application flow</h2>
+    <p>A shop signs in, creates a hang tag, checks the millimetre preview, then prints front and back through the <strong>TVS LP 46 NEO browser-print workflow</strong>. Creating a tag spends 1 credit unless an unlimited plan is active. Print and reprint do not spend credits. Admin work sits on a separate portal.</p>
+    <div class="legend">
+      <span><i class="swatch shop"></i> Shop session</span>
+      <span><i class="swatch print"></i> Tag and print</span>
+      <span><i class="swatch bill"></i> Credits</span>
+      <span><i class="swatch admin"></i> Admin portal</span>
+    </div>
+    <div class="diagram-card">
+      <svg viewBox="0 0 960 620" role="img" aria-labelledby="flow-title flow-desc">
+        <title id="flow-title">Jewellery Tag Printer application flow</title>
+        <desc id="flow-desc">Shop register or login leads to the dashboard. From there staff create a tag, preview front and back, save and print, or reprint from history. Billing grants credits. Admin portal manages tenants and plans.</desc>
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#5b6773" />
+          </marker>
+        </defs>
+
+        <!-- Shop session -->
+        <rect x="40" y="24" width="170" height="52" rx="10" fill="#20313f" />
+        <text x="125" y="47" text-anchor="middle" fill="#f8fafc" font-size="13" font-weight="700">Register or sign in</text>
+        <text x="125" y="64" text-anchor="middle" fill="#c4b08a" font-size="11">JWT · shop tenant</text>
+
+        <line x1="210" y1="50" x2="268" y2="50" stroke="#5b6773" stroke-width="1.6" marker-end="url(#arrow)" />
+
+        <rect x="272" y="24" width="170" height="52" rx="10" fill="#20313f" />
+        <text x="357" y="47" text-anchor="middle" fill="#f8fafc" font-size="13" font-weight="700">Shop dashboard</text>
+        <text x="357" y="64" text-anchor="middle" fill="#c4b08a" font-size="11">tags · prints · credits</text>
+
+        <line x1="442" y1="50" x2="500" y2="50" stroke="#5b6773" stroke-width="1.6" marker-end="url(#arrow)" />
+
+        <rect x="504" y="16" width="148" height="36" rx="8" fill="#1d6a4f" />
+        <text x="578" y="39" text-anchor="middle" fill="#f8fafc" font-size="12" font-weight="700">Billing plans</text>
+        <rect x="668" y="16" width="148" height="36" rx="8" fill="#1d6a4f" />
+        <text x="742" y="39" text-anchor="middle" fill="#f8fafc" font-size="12" font-weight="700">Settings / logo</text>
+        <rect x="832" y="16" width="88" height="36" rx="8" fill="#4b6275" />
+        <text x="876" y="39" text-anchor="middle" fill="#f8fafc" font-size="12" font-weight="700">Admin</text>
+        <line x1="652" y1="34" x2="664" y2="34" stroke="#5b6773" stroke-width="1.6" marker-end="url(#arrow)" />
+        <line x1="816" y1="34" x2="828" y2="34" stroke="#5b6773" stroke-width="1.6" marker-end="url(#arrow)" />
+
+        <!-- down from dashboard -->
+        <line x1="357" y1="76" x2="357" y2="118" stroke="#5b6773" stroke-width="1.6" marker-end="url(#arrow)" />
+
+        <!-- Create tag -->
+        <rect x="252" y="122" width="210" height="58" rx="10" fill="#b8893a" />
+        <text x="357" y="146" text-anchor="middle" fill="#1f2933" font-size="13" font-weight="700">Create jewellery tag</text>
+        <text x="357" y="164" text-anchor="middle" fill="#5b3d10" font-size="11">catalogue · gold/silver</text>
+
+        <line x1="357" y1="180" x2="357" y2="214" stroke="#5b6773" stroke-width="1.6" marker-end="url(#arrow)" />
+
+        <rect x="252" y="218" width="210" height="58" rx="10" fill="#b8893a" />
+        <text x="357" y="242" text-anchor="middle" fill="#1f2933" font-size="13" font-weight="700">Net weight + tag number</text>
+        <text x="357" y="260" text-anchor="middle" fill="#5b3d10" font-size="11">gross − stone − other</text>
+
+        <line x1="357" y1="276" x2="357" y2="310" stroke="#5b6773" stroke-width="1.6" marker-end="url(#arrow)" />
+
+        <!-- Preview split -->
+        <rect x="88" y="314" width="186" height="70" rx="10" fill="#fff" stroke="#b8893a" stroke-width="2" />
+        <text x="181" y="342" text-anchor="middle" fill="#20313f" font-size="13" font-weight="700">Preview · front</text>
+        <text x="181" y="362" text-anchor="middle" fill="#5b6773" font-size="11">Grs.Wt / Stn.Wt / Nt.Wt</text>
+
+        <rect x="440" y="314" width="186" height="70" rx="10" fill="#fff" stroke="#b8893a" stroke-width="2" />
+        <text x="533" y="342" text-anchor="middle" fill="#20313f" font-size="13" font-weight="700">Preview · back</text>
+        <text x="533" y="362" text-anchor="middle" fill="#5b6773" font-size="11">name · Code 128 · tag no.</text>
+
+        <line x1="357" y1="310" x2="357" y2="336" stroke="#5b6773" stroke-width="1.6" />
+        <line x1="274" y1="336" x2="181" y2="336" stroke="#5b6773" stroke-width="1.6" marker-end="url(#arrow)" />
+        <line x1="357" y1="336" x2="274" y2="336" stroke="#5b6773" stroke-width="1.6" />
+        <line x1="357" y1="336" x2="440" y2="336" stroke="#5b6773" stroke-width="1.6" marker-end="url(#arrow)" />
+
+        <line x1="181" y1="384" x2="181" y2="430" stroke="#5b6773" stroke-width="1.6" />
+        <line x1="533" y1="384" x2="533" y2="430" stroke="#5b6773" stroke-width="1.6" />
+        <line x1="181" y1="430" x2="533" y2="430" stroke="#5b6773" stroke-width="1.6" />
+        <line x1="357" y1="430" x2="357" y2="454" stroke="#5b6773" stroke-width="1.6" marker-end="url(#arrow)" />
+
+        <rect x="242" y="458" width="230" height="52" rx="10" fill="#1d6a4f" />
+        <text x="357" y="480" text-anchor="middle" fill="#f8fafc" font-size="13" font-weight="700">Save tag · debit 1 credit</text>
+        <text x="357" y="497" text-anchor="middle" fill="#d8efe4" font-size="11">skip debit if unlimited</text>
+
+        <line x1="357" y1="510" x2="357" y2="540" stroke="#5b6773" stroke-width="1.6" marker-end="url(#arrow)" />
+
+        <rect x="88" y="544" width="186" height="52" rx="10" fill="#b8893a" />
+        <text x="181" y="567" text-anchor="middle" fill="#1f2933" font-size="13" font-weight="700">Print page 1 · front</text>
+        <text x="181" y="584" text-anchor="middle" fill="#5b3d10" font-size="11">TVS LP 46 NEO</text>
+        <rect x="440" y="544" width="186" height="52" rx="10" fill="#b8893a" />
+        <text x="533" y="567" text-anchor="middle" fill="#1f2933" font-size="13" font-weight="700">Print page 2 · back</text>
+        <text x="533" y="584" text-anchor="middle" fill="#5b3d10" font-size="11">flip label in printer</text>
+
+        <line x1="357" y1="540" x2="357" y2="556" stroke="#5b6773" stroke-width="1.6" />
+        <line x1="181" y1="556" x2="533" y2="556" stroke="#5b6773" stroke-width="1.6" />
+        <line x1="181" y1="556" x2="181" y2="544" stroke="#5b6773" stroke-width="1.6" marker-end="url(#arrow)" />
+        <line x1="533" y1="556" x2="533" y2="544" stroke="#5b6773" stroke-width="1.6" marker-end="url(#arrow)" />
+
+        <!-- History branch -->
+        <line x1="462" y1="151" x2="700" y2="151" stroke="#5b6773" stroke-width="1.6" marker-end="url(#arrow)" />
+        <rect x="704" y="122" width="216" height="58" rx="10" fill="#fff" stroke="#20313f" stroke-width="1.6" />
+        <text x="812" y="146" text-anchor="middle" fill="#20313f" font-size="13" font-weight="700">History · search</text>
+        <text x="812" y="164" text-anchor="middle" fill="#5b6773" font-size="11">tag number or item name</text>
+
+        <line x1="812" y1="180" x2="812" y2="218" stroke="#5b6773" stroke-width="1.6" marker-end="url(#arrow)" />
+        <rect x="704" y="222" width="216" height="58" rx="10" fill="#b8893a" />
+        <text x="812" y="246" text-anchor="middle" fill="#1f2933" font-size="13" font-weight="700">Reprint</text>
+        <text x="812" y="264" text-anchor="middle" fill="#5b3d10" font-size="11">no extra credit debit</text>
+
+        <line x1="812" y1="280" x2="812" y2="300" stroke="#5b6773" stroke-width="1.6" stroke-dasharray="5 4" />
+        <line x1="640" y1="300" x2="812" y2="300" stroke="#5b6773" stroke-width="1.6" stroke-dasharray="5 4" />
+        <line x1="640" y1="300" x2="640" y2="570" stroke="#5b6773" stroke-width="1.6" stroke-dasharray="5 4" />
+        <line x1="640" y1="570" x2="626" y2="570" stroke="#5b6773" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#arrow)" />
+        <text x="652" y="520" fill="#5b6773" font-size="11">reprint joins print</text>
+
+        <rect x="704" y="330" width="216" height="112" rx="10" fill="#4b6275" />
+        <text x="812" y="358" text-anchor="middle" fill="#f8fafc" font-size="13" font-weight="700">/admin-portal</text>
+        <text x="812" y="380" text-anchor="middle" fill="#d5dde6" font-size="11">list shops</text>
+        <text x="812" y="398" text-anchor="middle" fill="#d5dde6" font-size="11">inspect ledger</text>
+        <text x="812" y="416" text-anchor="middle" fill="#d5dde6" font-size="11">adjust credits / validity</text>
+        <text x="812" y="434" text-anchor="middle" fill="#d5dde6" font-size="11">edit plan prices</text>
+      </svg>
+    </div>
+
+    <div class="flow">
+      <div class="step">
+        <span class="status done">1</span>
+        <div>
+          <h3>Register or sign in</h3>
+          <p>A shop owner creates an account (free starter credits) or signs in. The session is a JWT scoped to that shop. Platform staff open <code>/admin-portal</code> instead.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="status done">2</span>
+        <div>
+          <h3>Enter the piece and preview</h3>
+          <p>Staff pick an item from the shop catalogue, choose Gold or Silver, and enter weights. Net weight is calculated. The shop prefix plus a sequence becomes the tag number. Actual Preview shows the hang-tag front (weights) and back (item, barcode, tag number) at the shop’s millimetre size.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="status done">3</span>
+        <div>
+          <h3>Save, charge, print</h3>
+          <p>Saving stores the tag and spends 1 credit, unless unlimited printing is active. Print opens the browser dialog: page 1 is the front, page 2 is the back, for a TVS LP 46 NEO. Print and reprint do not spend credits.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="status done">4</span>
+        <div>
+          <h3>History, billing, settings</h3>
+          <p>History searches by tag number or item name and reprints without re-entry. Billing activates Starter, Growth, or Pro locally until Razorpay is wired. Settings cover shop profile (including logo), millimetre layout, and the item catalogue.</p>
+        </div>
+      </div>
+    </div>
+
+    <h2>Finalised</h2>
+    <p>These items are in the app and are treated as complete unless a later change reopens them.</p>
+    <div class="flow">
+      <div class="step">
+        <span class="status done">Done</span>
+        <div>
+          <h3>Project scaffold</h3>
+          <p>Multi-tenant jewellery tag app: FastAPI backend, React / Vite / TypeScript frontend, Docker Compose (Postgres + API + UI), and local SQLite for runs without Docker.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="status done">Done</span>
+        <div>
+          <h3>Shop accounts and tenancy</h3>
+          <p>Shop registration and login, JWT sessions, per-shop data isolation, and settings for shop name, address, phone, GST, logo, tag prefix, millimetre size, font, and print offsets.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="status done">Done</span>
+        <div>
+          <h3>Create, save, and reprint tags</h3>
+          <p>Weight tags with item, category, purity, pieces, gross / stone / other deduction, automatic net weight, sequential tag numbers, history search, and print-count logging.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="status done">Done</span>
+        <div>
+          <h3>TVS LP 46 NEO browser-print workflow</h3>
+          <p>On-screen millimetre preview and browser print dialog aimed at a <strong>TVS LP 46 NEO</strong>. The shop selects that printer in the dialog. Layout can be calibrated in Settings without a code change.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="status done">Done</span>
+        <div>
+          <h3>Credits and local billing</h3>
+          <p>₹2 display price per tag, 15 free credits on signup, 1 credit spent when a tag is created (not on print or reprint), Starter / Growth / Pro Annual plans, credit expiry, unlimited window, ledger, and in-app purchase confirm for local testing.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="status done">Done</span>
+        <div>
+          <h3>Admin portal</h3>
+          <p>Path <code>/admin-portal</code>: tenant list, credit ledger, credit adjustments, and billing plan edits.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="status done">Done</span>
+        <div>
+          <h3>Shop UI shell</h3>
+          <p>Create, history, billing, and settings (shop profile, tag layout, item catalogue), plus dashboard stats (total tags, today’s tags, prints, recent tags, credit balance).</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="status done">Done</span>
+        <div>
+          <h3>Front and back hang-tag layout</h3>
+          <p>Preview shows both faces of the same tag shape. Front: Grs.Wt / Stn.Wt / Nt.Wt. Back: item name, Code 128 barcode of the tag number, and the tag number. Print sends front then back as two pages. Hanging tab stays empty. Save, Save &amp; Print, and Test Print are available on Create Tag.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="status done">Done</span>
+        <div>
+          <h3>Shop item catalogue</h3>
+          <p>Each shop maintains named items (seeded defaults such as Ring, Chain, Mangalsutra). Create Tag uses that list as a dropdown. Catalogue CRUD lives under Settings → Items.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="status done">Done</span>
+        <div>
+          <h3>Shop logo</h3>
+          <p>Owners upload a JPG, PNG, WEBP, or GIF (max 5 MB) in Settings → Shop. The file is stored under <code>backend/uploads/logos/</code> and shown in the sidebar. It is not printed on the hang tag. Replace and remove are supported.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="status done">Done</span>
+        <div>
+          <h3>Responsive shop UI</h3>
+          <p>Phone, tablet, and desktop layouts: collapsible navigation, stacked create/preview and billing grids, scrollable history tables, 44px touch targets, safe-area padding, and reduced-motion support.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="status done">Done</span>
+        <div>
+          <h3>Product and technical docs</h3>
+          <p>Standalone HTML overviews in <code>docs/application.html</code> and <code>docs/technical.html</code>, plus this status page with the application-flow diagram.</p>
+        </div>
+      </div>
+    </div>
+
+    <h2>Next</h2>
+    <p>Work that is agreed as upcoming, in the order we expect to take it unless priorities change.</p>
+    <div class="flow">
+      <div class="step">
+        <span class="status next">Next</span>
+        <div>
+          <h3>Physical print calibration</h3>
+          <p>Test front and back on the TVS LP 46 NEO. Tune millimetre size, font, and offsets until both faces match the physical hang tag, including barcode scan reliability.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="status next">Next</span>
+        <div>
+          <h3>Razorpay payments</h3>
+          <p>Replace the local “confirm purchase” path with Razorpay Orders and payment verification before production billing.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="status later">Later</span>
+        <div>
+          <h3>Windows USB print agent</h3>
+          <p>After label sizes and offsets are proven, add a shop-side Windows agent so printing can go straight to USB without the browser dialog.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="status later">Later</span>
+        <div>
+          <h3>Operator accounts</h3>
+          <p>The operator role exists on the user model, but registration only creates shop owners. Add invite or create-staff flow for counter users.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="status later">Later</span>
+        <div>
+          <h3>Production hardening</h3>
+          <p>Replace the JWT secret, lock CORS and admin access, and run Postgres in the target environment. Commit and deploy when the print layout is signed off.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer>
+    <div class="wrap">Jewellery Tag Printer · <a href="application.html">Application</a> · <a href="technical.html">Technical</a></div>
+  </footer>
+</body>
+</html>

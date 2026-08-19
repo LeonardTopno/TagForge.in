@@ -1,10 +1,12 @@
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from pathlib import Path
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, Query, status
+from fastapi import Depends, FastAPI, File, HTTPException, Query, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -12,7 +14,7 @@ from sqlalchemy.orm import selectinload
 from app.config import get_settings
 from app.database import SessionLocal, create_database, get_db
 from app.deps import get_current_user
-from app.models import BillingPlan, CreditLedgerEntry, JewelleryTag, LedgerEntryType, PlanPurchase, PrintLog, PurchaseStatus, Shop, User, UserRole
+from app.models import BillingPlan, CreditLedgerEntry, JewelleryTag, LedgerEntryType, PlanPurchase, PrintLog, PurchaseStatus, Shop, ShopItem, User, UserRole
 from app.schemas import (
     AdminCreditAdjustment,
     AdminTenantResponse,
@@ -27,6 +29,9 @@ from app.schemas import (
     RegisterRequest,
     ShopResponse,
     ShopSettingsUpdate,
+    ShopItemCreate,
+    ShopItemResponse,
+    ShopItemUpdate,
     TagCreate,
     TagResponse,
     TokenResponse,
@@ -35,15 +40,32 @@ from app.schemas import (
 from app.security import create_access_token, hash_password, verify_password
 
 
+settings = get_settings()
+UPLOAD_ROOT = Path(__file__).resolve().parent.parent / "uploads"
+LOGO_DIR = UPLOAD_ROOT / "logos"
+ALLOWED_LOGO_TYPES = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+}
+MAX_LOGO_BYTES = 5 * 1024 * 1024
+
+
+def ensure_upload_dirs() -> None:
+    LOGO_DIR.mkdir(parents=True, exist_ok=True)
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    ensure_upload_dirs()
     await create_database()
     async with SessionLocal() as db:
         await seed_default_plans(db)
+        await seed_missing_shop_items(db)
     yield
 
 
-settings = get_settings()
 app = FastAPI(title=settings.app_name, version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
@@ -99,6 +121,52 @@ def billing_summary(shop: Shop) -> BillingSummary:
         is_unlimited_active=is_unlimited_active(shop),
         tag_price_inr=settings.tag_price_inr,
     )
+
+
+DEFAULT_JEWELLERY_ITEMS = [
+    "Ring",
+    "Tops",
+    "Earrings",
+    "Necklace",
+    "Chain",
+    "Pendant",
+    "Bangle",
+    "Bracelet",
+    "Kada",
+    "Mangalsutra",
+    "Nose Pin",
+    "Anklet",
+    "Coin",
+    "Bar",
+    "Set",
+]
+
+
+def normalize_item_name(name: str) -> str:
+    return " ".join(name.split()).strip()
+
+
+async def seed_items_for_shop(db: AsyncSession, shop_id: int) -> None:
+    existing = await db.scalar(select(func.count()).select_from(ShopItem).where(ShopItem.shop_id == shop_id))
+    if existing:
+        return
+    for index, name in enumerate(DEFAULT_JEWELLERY_ITEMS):
+        db.add(ShopItem(shop_id=shop_id, name=name, sort_order=index))
+
+
+async def seed_missing_shop_items(db: AsyncSession) -> None:
+    shops = await db.scalars(select(Shop))
+    for shop in shops:
+        await seed_items_for_shop(db, shop.id)
+    await db.commit()
+
+
+def delete_shop_logo_file(shop: Shop) -> None:
+    if not shop.logo_path:
+        return
+    path = UPLOAD_ROOT / shop.logo_path
+    if path.is_file():
+        path.unlink()
 
 
 async def seed_default_plans(db: AsyncSession) -> None:
@@ -241,6 +309,7 @@ async def register(payload: RegisterRequest, db: Annotated[AsyncSession, Depends
     )
     db.add(user)
     await db.flush()
+    await seed_items_for_shop(db, shop.id)
     db.add(
         CreditLedgerEntry(
             shop_id=shop.id,
@@ -343,7 +412,7 @@ async def create_tag(
     shop.next_tag_number += 1
     db.add(tag)
     await db.flush()
-    ledger_entry = charge_tag_credits(shop, payload.copies, f"Created {payload.copies} tag copy/copies for {tag.tag_number}", tag.id)
+    ledger_entry = charge_tag_credits(shop, 1, f"Created tag {tag.tag_number}", tag.id)
     if ledger_entry:
         db.add(ledger_entry)
     await db.commit()
@@ -360,15 +429,6 @@ async def mark_printed(
     tag = await db.get(JewelleryTag, tag_id)
     if not tag or tag.shop_id != current_user.shop_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tag not found")
-
-    shop = await db.get(Shop, current_user.shop_id, with_for_update=True)
-    if not shop:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shop not found")
-
-    if tag.print_count > 0:
-        ledger_entry = charge_tag_credits(shop, tag.copies, f"Reprinted {tag.copies} tag copy/copies for {tag.tag_number}", tag.id)
-        if ledger_entry:
-            db.add(ledger_entry)
 
     tag.print_count += tag.copies
     db.add(PrintLog(shop_id=current_user.shop_id, jewellery_tag_id=tag.id, printed_by=current_user.id, copies=tag.copies))
@@ -595,3 +655,124 @@ async def update_settings(
     await db.commit()
     await db.refresh(shop)
     return shop
+
+
+@app.post("/settings/logo", response_model=ShopResponse)
+async def upload_shop_logo(
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    file: Annotated[UploadFile, File()],
+) -> Shop:
+    shop = await db.get(Shop, current_user.shop_id)
+    if not shop:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shop not found")
+
+    content_type = (file.content_type or "").lower()
+    extension = ALLOWED_LOGO_TYPES.get(content_type)
+    if not extension:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Logo must be a JPG, PNG, WEBP, or GIF image")
+
+    contents = await file.read()
+    if not contents:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Logo file is empty")
+    if len(contents) > MAX_LOGO_BYTES:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Logo must be 5 MB or smaller")
+
+    ensure_upload_dirs()
+    delete_shop_logo_file(shop)
+    relative_path = f"logos/{shop.id}{extension}"
+    (UPLOAD_ROOT / relative_path).write_bytes(contents)
+    shop.logo_path = relative_path
+    await db.commit()
+    await db.refresh(shop)
+    return shop
+
+
+@app.delete("/settings/logo", response_model=ShopResponse)
+async def delete_shop_logo(
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> Shop:
+    shop = await db.get(Shop, current_user.shop_id)
+    if not shop:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shop not found")
+
+    delete_shop_logo_file(shop)
+    shop.logo_path = None
+    await db.commit()
+    await db.refresh(shop)
+    return shop
+
+
+async def get_shop_item(db: AsyncSession, shop_id: int, item_id: int) -> ShopItem:
+    item = await db.get(ShopItem, item_id)
+    if not item or item.shop_id != shop_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+    return item
+
+
+async def ensure_unique_item_name(db: AsyncSession, shop_id: int, name: str, item_id: int | None = None) -> str:
+    normalized = normalize_item_name(name)
+    if not normalized:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Item name is required")
+
+    query = select(ShopItem).where(ShopItem.shop_id == shop_id, func.lower(ShopItem.name) == normalized.lower())
+    if item_id is not None:
+        query = query.where(ShopItem.id != item_id)
+    existing = await db.scalar(query)
+    if existing:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="That item is already in the list")
+    return normalized
+
+
+@app.get("/settings/items", response_model=list[ShopItemResponse])
+async def list_shop_items(
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> list[ShopItem]:
+    result = await db.scalars(select(ShopItem).where(ShopItem.shop_id == current_user.shop_id).order_by(func.lower(ShopItem.name)))
+    return list(result)
+
+
+@app.post("/settings/items", response_model=ShopItemResponse, status_code=status.HTTP_201_CREATED)
+async def create_shop_item(
+    payload: ShopItemCreate,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> ShopItem:
+    name = await ensure_unique_item_name(db, current_user.shop_id, payload.name)
+    max_order = await db.scalar(select(func.coalesce(func.max(ShopItem.sort_order), -1)).where(ShopItem.shop_id == current_user.shop_id))
+    item = ShopItem(shop_id=current_user.shop_id, name=name, sort_order=(max_order or 0) + 1)
+    db.add(item)
+    await db.commit()
+    await db.refresh(item)
+    return item
+
+
+@app.put("/settings/items/{item_id}", response_model=ShopItemResponse)
+async def update_shop_item(
+    item_id: int,
+    payload: ShopItemUpdate,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> ShopItem:
+    item = await get_shop_item(db, current_user.shop_id, item_id)
+    item.name = await ensure_unique_item_name(db, current_user.shop_id, payload.name, item.id)
+    await db.commit()
+    await db.refresh(item)
+    return item
+
+
+@app.delete("/settings/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_shop_item(
+    item_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> None:
+    item = await get_shop_item(db, current_user.shop_id, item_id)
+    await db.delete(item)
+    await db.commit()
+
+
+ensure_upload_dirs()
+app.mount("/uploads", StaticFiles(directory=UPLOAD_ROOT), name="uploads")

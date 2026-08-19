@@ -45,6 +45,7 @@
     h2 { margin: 36px 0 12px; font-size: 1.35rem; }
     h3 { margin: 0 0 8px; font-size: 1.05rem; }
     p, li { color: var(--muted); }
+    a { color: var(--navy); }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 20px 0; }
     .card {
       background: var(--card);
@@ -87,23 +88,24 @@
 <body>
   <header>
     <div class="wrap">
-      <p class="eyebrow">Product overview</p>
+      <p class="eyebrow">TVS LP 46 NEO browser-print workflow</p>
       <h1>Jewellery Tag Printer</h1>
-      <p>A multi-tenant web app for jewellery shops to create weight tags, preview them at real millimetre sizes, and print through the browser on a TVS LP 46 NEO label printer.</p>
+      <p>A multi-tenant web app for jewellery shops to create weight tags, preview front and back hang-tag faces at real millimetre sizes, and print through the browser on a TVS LP 46 NEO label printer.</p>
       <nav>
         <a href="technical.html">Technical overview</a>
+        <a href="progress.html">Status and plans</a>
         <a class="ghost" href="../README.md">README</a>
       </nav>
     </div>
   </header>
   <main>
-    <p>Each shop registers its own account. Tags, print history, layout settings, and credits stay isolated to that shop. This version does not print barcodes.</p>
+    <p>Each shop registers its own account. Tags, print history, layout settings, and credits stay isolated to that shop. The hang-tag preview prints a front (weights) and a back (item name, Code 128 barcode, tag number).</p>
 
     <h2>Who it is for</h2>
     <div class="grid">
       <article class="card">
         <h3>Shop owners</h3>
-        <p>Register the shop, buy credits or an unlimited plan, and keep print layout calibrated for the counter printer.</p>
+        <p>Register the shop, upload a logo, buy credits or an unlimited plan, and keep print layout calibrated for the counter printer.</p>
       </article>
       <article class="card">
         <h3>Counter staff</h3>
@@ -118,14 +120,31 @@
     <h2>What a shop can do</h2>
     <div class="flow">
       <div class="step"><span class="num">1</span><div><h3>Register or sign in</h3><p>Create a shop with an owner email. New shops receive free tag credits so they can try printing immediately.</p></div></div>
-      <div class="step"><span class="num">2</span><div><h3>Create a jewellery tag</h3><p>Enter item name, category, purity, pieces, gross weight, stone weight, other deduction, and copy count. Net weight is calculated automatically. Each shop gets sequential tag numbers with a custom prefix.</p></div></div>
-      <div class="step"><span class="num">3</span><div><h3>Preview and print</h3><p>The on-screen preview uses millimetre CSS so the layout matches the physical label. Printing uses the browser print dialog. First print is billed as copies; later reprints spend credits again unless unlimited printing is active.</p></div></div>
+      <div class="step"><span class="num">2</span><div><h3>Create a jewellery tag</h3><p>Pick an item from the shop catalogue, choose Gold or Silver, and enter purity plus gross, stone, and other deduction. Net weight is calculated automatically. Each shop gets sequential tag numbers with a custom prefix. Creating a tag spends 1 credit.</p></div></div>
+      <div class="step"><span class="num">3</span><div><h3>Preview and print</h3><p>Actual Preview shows both hang-tag faces at millimetre size. Front: Grs.Wt / Stn.Wt / Nt.Wt. Back: item name, Code 128 barcode of the tag number, and the tag number. Save, Save &amp; Print, or Test Print. The browser print dialog sends front then back as two pages. Print and reprint do not spend credits.</p></div></div>
       <div class="step"><span class="num">4</span><div><h3>Search history</h3><p>Find saved tags by tag number or item name and reprint without re-entering weights.</p></div></div>
-      <div class="step"><span class="num">5</span><div><h3>Tune the printer layout</h3><p>Settings store tag width, height, font size, horizontal and vertical offsets, shop name on the label, and tag prefix. Shops can calibrate against the TVS LP 46 NEO without a code change.</p></div></div>
+      <div class="step"><span class="num">5</span><div><h3>Tune shop, tag, and items</h3><p>Settings has three sections: shop profile (name, address, phone, GST, logo), tag layout (prefix, millimetre size, font, offsets), and the item catalogue used on Create Tag. The logo appears in the shop sidebar, not on the printed hang tag. Shops can calibrate against the TVS LP 46 NEO without a code change.</p></div></div>
+    </div>
+    <p>The diagram of this path, including billing and admin, is on <a href="progress.html#application-flow">Status and plans</a>.</p>
+
+    <h2>Hang-tag faces</h2>
+    <div class="grid">
+      <article class="card">
+        <h3>Front</h3>
+        <p>Weights on the main body: gross, stone, and net. The hanging tab is empty so the fold stays clear.</p>
+      </article>
+      <article class="card">
+        <h3>Back</h3>
+        <p>Item name (uppercase), Code 128 barcode of the tag number, then the tag number. Same hang-tag outline as the front.</p>
+      </article>
+      <article class="card">
+        <h3>Print</h3>
+        <p>Two pages in one browser print job. Flip the label in the TVS LP 46 NEO between faces until a dual-sided path is proven.</p>
+      </article>
     </div>
 
     <h2>Billing for shops</h2>
-    <p>Printing is sold as tag credits. The displayed price per tag defaults to ₹2. Credits expire with the paid plan window. An unlimited plan skips per-tag debit while it is active.</p>
+    <p>Creating a tag spends 1 credit. The displayed price per tag defaults to ₹2. Credits expire with the paid plan window. An unlimited plan skips the create debit while it is active. Print and reprint do not spend credits.</p>
     <table>
       <thead>
         <tr><th>Plan</th><th>Price</th><th>What the shop gets</th></tr>
@@ -142,11 +161,14 @@
     <h2>Admin portal</h2>
     <p>Open <span class="tag">/admin-portal</span> to list shops, inspect credit ledgers, grant or reduce credits, set validity, and edit plan prices and allowances.</p>
 
-    <h2>Why printing is in the browser</h2>
-    <p>A hosted website cannot talk directly to a USB label printer in the shop. Version 1 therefore uses the browser print dialog and millimetre CSS. After physical sizes and offsets are proven, a Windows print agent can be added for unattended USB printing.</p>
+    <h2>TVS LP 46 NEO browser-print workflow</h2>
+    <p>Version 1 is built for the <strong>TVS LP 46 NEO</strong> label printer. A hosted website cannot talk directly to a USB printer in the shop, so the shop uses the browser print dialog: millimetre CSS for size, then page 1 (front) and page 2 (back). Choose the TVS LP 46 NEO in that dialog. After physical sizes and offsets are proven, a Windows print agent can be added for unattended USB printing.</p>
+
+    <h2>Devices and browsers</h2>
+    <p>The shop UI is responsive across phone, tablet, and desktop. On narrow screens the sidebar becomes a slide-out menu; forms and billing cards stack vertically; wide tables scroll horizontally. Controls use touch-friendly sizing. Printing still goes through the browser on each device — use Chrome, Edge, Firefox, or Safari on the counter PC or tablet where the TVS LP 46 NEO is installed.</p>
   </main>
   <footer>
-    <div class="wrap">Jewellery Tag Printer · <a href="technical.html">Technical overview</a></div>
+    <div class="wrap">Jewellery Tag Printer · <a href="technical.html">Technical overview</a> · <a href="progress.html">Status and plans</a></div>
   </footer>
 </body>
 </html>

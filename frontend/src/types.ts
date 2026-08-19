@@ -1,6 +1,9 @@
 export type Shop = {
   id: number;
   name: string;
+  address: string;
+  phone_number: string;
+  gst_no: string;
   short_name: string;
   tag_prefix: string;
   next_tag_number: number;
@@ -10,6 +13,14 @@ export type Shop = {
   horizontal_offset_mm: string;
   vertical_offset_mm: string;
   show_shop_name: boolean;
+  logo_url?: string | null;
+};
+
+export type ShopItem = {
+  id: number;
+  shop_id: number;
+  name: string;
+  sort_order: number;
 };
 
 export type User = {

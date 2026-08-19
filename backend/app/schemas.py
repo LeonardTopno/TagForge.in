@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, computed_field
 
 
 class RegisterRequest(BaseModel):
@@ -20,6 +20,9 @@ class LoginRequest(BaseModel):
 class ShopResponse(BaseModel):
     id: int
     name: str
+    address: str
+    phone_number: str
+    gst_no: str
     short_name: str
     tag_prefix: str
     next_tag_number: int
@@ -29,9 +32,17 @@ class ShopResponse(BaseModel):
     horizontal_offset_mm: Decimal
     vertical_offset_mm: Decimal
     show_shop_name: bool
+    logo_path: str | None = None
     tag_credit_balance: int
     credits_expire_at: datetime | None
     unlimited_until: datetime | None
+
+    @computed_field
+    @property
+    def logo_url(self) -> str | None:
+        if not self.logo_path:
+            return None
+        return f"/uploads/{self.logo_path}"
 
     class Config:
         from_attributes = True
@@ -56,6 +67,10 @@ class TokenResponse(BaseModel):
 
 
 class ShopSettingsUpdate(BaseModel):
+    name: str = Field(min_length=2, max_length=160)
+    address: str = Field(default="", max_length=255)
+    phone_number: str = Field(default="", max_length=20)
+    gst_no: str = Field(default="", max_length=20)
     short_name: str = Field(min_length=2, max_length=40)
     tag_prefix: str = Field(min_length=1, max_length=12)
     tag_width_mm: Decimal = Field(gt=Decimal("20.00"), le=Decimal("100.00"))
@@ -64,6 +79,24 @@ class ShopSettingsUpdate(BaseModel):
     horizontal_offset_mm: Decimal = Field(ge=Decimal("-10.00"), le=Decimal("10.00"))
     vertical_offset_mm: Decimal = Field(ge=Decimal("-10.00"), le=Decimal("10.00"))
     show_shop_name: bool
+
+
+class ShopItemCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+
+
+class ShopItemUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+
+
+class ShopItemResponse(BaseModel):
+    id: int
+    shop_id: int
+    name: str
+    sort_order: int
+
+    class Config:
+        from_attributes = True
 
 
 class TagCreate(BaseModel):

@@ -40,6 +40,10 @@ def _ensure_sqlite_columns(sync_conn) -> None:
         "tag_credit_balance": "INTEGER NOT NULL DEFAULT 15",
         "credits_expire_at": "DATETIME",
         "unlimited_until": "DATETIME",
+        "address": "VARCHAR(255) NOT NULL DEFAULT ''",
+        "phone_number": "VARCHAR(20) NOT NULL DEFAULT ''",
+        "gst_no": "VARCHAR(20) NOT NULL DEFAULT ''",
+        "logo_path": "VARCHAR(255)",
     }
     for column_name, column_sql in additions.items():
         if column_name not in existing:
