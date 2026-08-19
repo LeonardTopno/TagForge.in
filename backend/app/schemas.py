@@ -111,7 +111,7 @@ class BillingSummary(BaseModel):
     credits_expire_at: datetime | None
     unlimited_until: datetime | None
     is_unlimited_active: bool
-    tag_price_inr: int = 2
+    tag_price_inr: int
 
 
 class BillingPlanResponse(BaseModel):

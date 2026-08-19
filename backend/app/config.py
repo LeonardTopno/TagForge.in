@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     database_url: str = "sqlite+aiosqlite:///./tag_printer.db"
     allowed_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
     secret_key: str = "change-this-before-production"
+    tag_price_inr: int = 2
+    free_registration_credits: int = 15
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

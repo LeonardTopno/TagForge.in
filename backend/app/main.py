@@ -34,9 +34,6 @@ from app.schemas import (
 )
 from app.security import create_access_token, hash_password, verify_password
 
-TAG_PRICE_INR = 2
-FREE_REGISTRATION_CREDITS = 15
-
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -100,7 +97,7 @@ def billing_summary(shop: Shop) -> BillingSummary:
         credits_expire_at=shop.credits_expire_at,
         unlimited_until=shop.unlimited_until,
         is_unlimited_active=is_unlimited_active(shop),
-        tag_price_inr=TAG_PRICE_INR,
+        tag_price_inr=settings.tag_price_inr,
     )
 
 
@@ -229,7 +226,12 @@ async def register(payload: RegisterRequest, db: Annotated[AsyncSession, Depends
     if existing:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email is already registered")
 
-    shop = Shop(name=payload.shop_name, short_name=payload.shop_short_name)
+    starter_credits = settings.free_registration_credits
+    shop = Shop(
+        name=payload.shop_name,
+        short_name=payload.shop_short_name,
+        tag_credit_balance=starter_credits,
+    )
     user = User(
         shop=shop,
         name=payload.owner_name,
@@ -243,8 +245,8 @@ async def register(payload: RegisterRequest, db: Annotated[AsyncSession, Depends
         CreditLedgerEntry(
             shop_id=shop.id,
             entry_type=LedgerEntryType.CREDIT,
-            credits=FREE_REGISTRATION_CREDITS,
-            balance_after=FREE_REGISTRATION_CREDITS,
+            credits=starter_credits,
+            balance_after=starter_credits,
             description="Free registration credits",
         )
     )
