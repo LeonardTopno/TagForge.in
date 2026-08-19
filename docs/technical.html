@@ -209,8 +209,76 @@ docs/                 application, technical, and progress HTML</pre>
     </table>
     <p>Loaded in <code>backend/app/config.py</code> via Pydantic Settings from <code>backend/.env</code>.</p>
 
+    <h2 id="physical-setup">Physical printer and media</h2>
+    <p>Reference hardware measured at a live jewellery counter (Bin Ismail Gold). Use these values as the starting point for <strong>Settings → Tag Settings</strong> and physical calibration on the TVS LP 46 NEO.</p>
+
+    <h3>TVS LP 46 NEO specifications</h3>
+    <table>
+      <thead>
+        <tr><th>Specification</th><th>Value</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Brand / model</td><td>TVS Electronics LP 46 NEO</td></tr>
+        <tr><td>Resolution</td><td>203 DPI (~48 characters per line)</td></tr>
+        <tr><td>Print speed</td><td>6 ips (150 mm/s)</td></tr>
+        <tr><td>Interface</td><td>USB</td></tr>
+        <tr><td>Sensors</td><td>Movable black mark and gap sensor</td></tr>
+        <tr><td>Print method</td><td>Thermal transfer (ribbon up to 300 m; 1/2" or 1" core)</td></tr>
+        <tr><td>Max print width</td><td>~104 mm (4 inch class)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Tag media — jewellery barbell roll</h3>
+    <table>
+      <thead>
+        <tr><th>Property</th><th>Detail</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Common names</td><td>Jewellery tag, barbell tag, dumbbell tag, rat-tail tag</td></tr>
+        <tr><td>Material</td><td>White glossy synthetic (polyester / polypropylene)</td></tr>
+        <tr><td>Print method</td><td>Thermal transfer with ribbon (not direct thermal)</td></tr>
+        <tr><td>Roll format</td><td>Two-up — two tags side by side on the liner (~75–80 mm liner width)</td></tr>
+        <tr><td>Label sensing</td><td>Gap or black mark between labels</td></tr>
+        <tr><td>Structure</td><td>Printable face → narrow neck/bridge → adhesive tail (wraps around jewellery)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Measured dimensions</h3>
+    <table>
+      <thead>
+        <tr><th>Dimension</th><th>Value</th><th>Safe printable area</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Total tag width</td><td>~72–80 mm</td><td>—</td></tr>
+        <tr><td>Tag height</td><td>~15 mm</td><td>—</td></tr>
+        <tr><td>Main printable face</td><td>~50–55 mm × ~13–15 mm</td><td>~48–53 mm × ~11–13 mm (1–2 mm margin)</td></tr>
+        <tr><td>Neck / bridge</td><td>~3–5 mm wide</td><td>Not printed</td></tr>
+        <tr><td>Tail</td><td>~15–22 mm long</td><td>Not printed</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Suggested Tag Settings defaults:</strong> <code>tag_width_mm</code> = 80, <code>tag_height_mm</code> = 15 (model default is 13 — update per shop), <code>font_size_pt</code> = 7–8, offsets = 0 then tune on test print. Barcode target height in CSS: ~4.5–6 mm at 203 DPI.</p>
+
+    <h3>Mapping to frontend layout</h3>
+    <p><code>PrintableTag</code> in <code>frontend/src/App.tsx</code> renders a horizontal strip:</p>
+<pre>grid-template-columns: minmax(0, 1fr) 3mm 22mm;
+  → tag-main-body (printable) | tag-neck | tag-tail</pre>
+    <p>On an 80 mm-wide tag, the main body is roughly <strong>55 mm</strong> (80 − 3 − 22). Weights and barcode render inside <code>.tag-main-body</code> only. Front and back are separate print pages (<code>break-after: page</code> in <code>styles.css</code>).</p>
+    <p>Print CSS currently hardcodes <code>@page { size: 80mm 13mm }</code>. Per-shop <code>tag_width_mm</code> and <code>tag_height_mm</code> apply to the on-screen preview but not yet to <code>@page</code> — calibration should account for this gap until print CSS is made dynamic.</p>
+
+    <h3>Counter PC / driver settings</h3>
+    <ul>
+      <li>Media type: gap or black mark (match the roll)</li>
+      <li>Label size: custom ~80 mm × 15 mm</li>
+      <li>Orientation: landscape for the strip</li>
+      <li>Scale: 100% — do not fit to page</li>
+      <li>Margins: none or minimum</li>
+      <li>Printer selection in browser dialog: <strong>TVS LP 46 NEO</strong></li>
+    </ul>
+
     <h2>TVS LP 46 NEO browser-print workflow</h2>
-    <p>The target printer is the <strong>TVS LP 46 NEO</strong>. Create Tag renders two <code>PrintableTag</code> faces in a <code>print-bundle</code>. Print CSS keeps only that bundle visible. Page 1 is front weights; page 2 is back item + Code 128 of <code>tag_number</code> + the human-readable number. The hanging tab is empty on both faces. Offsets come from shop settings. The operator selects the TVS LP 46 NEO in the browser print dialog. Shop logos are stored under <code>backend/uploads/logos/</code> and served at <code>/uploads</code>; that folder is gitignored.</p>
+    <p>The app is built for the <strong>TVS LP 46 NEO</strong> label printer. Printing uses the browser print dialog, not direct USB from the server. The operator selects <strong>TVS LP 46 NEO</strong> in that dialog.</p>
+    <p>Create Tag renders two <code>PrintableTag</code> faces in a <code>print-bundle</code>. Print CSS keeps only that bundle visible. Page 1 is front weights; page 2 is back item + Code 128 of <code>tag_number</code> + the human-readable number. The hanging tab is empty on both faces.</p>
+    <p>Millimetre layout comes from <strong>Settings → Tag Settings</strong> (<code>tag_width_mm</code>, <code>tag_height_mm</code>, <code>font_size_pt</code>, <code>horizontal_offset_mm</code>, <code>vertical_offset_mm</code>). Shops calibrate these on the TVS LP 46 NEO until preview and print align. Shop logos are stored under <code>backend/uploads/logos/</code> and served at <code>/uploads</code>; that folder is gitignored.</p>
 
     <h2>Local run</h2>
     <p>Without Docker: venv + <code>uvicorn app.main:app --reload</code> in <code>backend/</code>, and <code>npm run dev</code> in <code>frontend/</code>. With Docker: <code>docker compose up --build</code> starts Postgres 16, API on 8000, Vite on 5173. SQLite schema migrations for extra shop columns are applied in <code>create_database()</code> for local files only.</p>

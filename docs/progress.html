@@ -267,7 +267,7 @@
         <span class="status done">3</span>
         <div>
           <h3>Save, charge, print</h3>
-          <p>Saving stores the tag and spends 1 credit, unless unlimited printing is active. Print opens the browser dialog: page 1 is the front, page 2 is the back, for a TVS LP 46 NEO. Print and reprint do not spend credits.</p>
+          <p>Saving stores the tag and spends 1 credit, unless unlimited printing is active. Print opens the <strong>browser print dialog</strong> (not direct USB). Choose <strong>TVS LP 46 NEO</strong> as the printer: page 1 is the front, page 2 is the back. Calibrate millimetre size and offsets in <strong>Tag Settings</strong>. Print and reprint do not spend credits.</p>
         </div>
       </div>
       <div class="step">
@@ -307,7 +307,7 @@
         <span class="status done">Done</span>
         <div>
           <h3>TVS LP 46 NEO browser-print workflow</h3>
-          <p>On-screen millimetre preview and browser print dialog aimed at a <strong>TVS LP 46 NEO</strong>. The shop selects that printer in the dialog. Layout can be calibrated in Settings without a code change.</p>
+          <p>Built for the <strong>TVS LP 46 NEO</strong> label printer. On-screen millimetre preview and browser print dialog — select that printer when prompted; no direct USB from the web app. Tag width, height, font, and offsets are tuned in <strong>Settings → Tag Settings</strong> and calibrated on the physical printer.</p>
         </div>
       </div>
       <div class="step">
@@ -368,6 +368,22 @@
       </div>
     </div>
 
+    <h2 id="physical-setup">Reference hardware setup</h2>
+    <p>Physical printer and tag media identified at <strong>Bin Ismail Gold</strong>. These measurements drive the next calibration milestone.</p>
+    <table>
+      <thead>
+        <tr><th>Item</th><th>Detail</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Printer</td><td>TVS Electronics LP 46 NEO — 203 DPI, USB, gap/black-mark sensor, thermal transfer ribbon</td></tr>
+        <tr><td>Tag paper</td><td>White glossy synthetic jewellery barbell tags, two-up on roll</td></tr>
+        <tr><td>Tag size</td><td>~80 mm × 15 mm total; printable face ~50–55 mm × ~13–15 mm</td></tr>
+        <tr><td>Tag structure</td><td>Printable face + ~3 mm neck + ~22 mm adhesive tail (not printed)</td></tr>
+        <tr><td>Starting Tag Settings</td><td>80 mm width, 15 mm height, 7–8 pt font, offsets tuned on test print</td></tr>
+      </tbody>
+    </table>
+    <p>Full specifications, layout diagram, and CSS mapping: <a href="technical.html#physical-setup">technical overview → Physical printer and media</a>. Shop-facing summary: <a href="application.html">application overview → Printer and tag media</a>.</p>
+
     <h2>Next</h2>
     <p>Work that is agreed as upcoming, in the order we expect to take it unless priorities change.</p>
     <div class="flow">
@@ -375,7 +391,7 @@
         <span class="status next">Next</span>
         <div>
           <h3>Physical print calibration</h3>
-          <p>Test front and back on the TVS LP 46 NEO. Tune millimetre size, font, and offsets until both faces match the physical hang tag, including barcode scan reliability.</p>
+          <p>Test front and back on the TVS LP 46 NEO using the <a href="#physical-setup">reference hardware setup</a> (80 × 15 mm, barbell tags). Tune millimetre size, font, and offsets in Tag Settings until both faces match the physical hang tag, including barcode scan reliability. Make <code>@page</code> print size follow shop tag dimensions.</p>
         </div>
       </div>
       <div class="step">

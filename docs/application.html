@@ -83,6 +83,17 @@
     }
     footer { border-top: 1px solid var(--line); padding: 20px 24px 32px; color: var(--muted); font-size: 14px; }
     footer a { color: var(--navy); }
+    pre.diagram {
+      margin: 16px 0 0;
+      padding: 14px 16px;
+      background: #ece6dc;
+      border-radius: 12px;
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--ink);
+      overflow-x: auto;
+    }
   </style>
 </head>
 <body>
@@ -121,9 +132,9 @@
     <div class="flow">
       <div class="step"><span class="num">1</span><div><h3>Register or sign in</h3><p>Create a shop with an owner email. New shops receive free tag credits so they can try printing immediately.</p></div></div>
       <div class="step"><span class="num">2</span><div><h3>Create a jewellery tag</h3><p>Pick an item from the shop catalogue, choose Gold or Silver, and enter purity plus gross, stone, and other deduction. Net weight is calculated automatically. Each shop gets sequential tag numbers with a custom prefix. Creating a tag spends 1 credit.</p></div></div>
-      <div class="step"><span class="num">3</span><div><h3>Preview and print</h3><p>Actual Preview shows both hang-tag faces at millimetre size. Front: Grs.Wt / Stn.Wt / Nt.Wt. Back: item name, Code 128 barcode of the tag number, and the tag number. Save, Save &amp; Print, or Test Print. The browser print dialog sends front then back as two pages. Print and reprint do not spend credits.</p></div></div>
+      <div class="step"><span class="num">3</span><div><h3>Preview and print</h3><p>Actual Preview shows both hang-tag faces at millimetre size. Front: Grs.Wt / Stn.Wt / Nt.Wt. Back: item name, Code 128 barcode of the tag number, and the tag number. Save, Save &amp; Print, or Test Print opens the <strong>browser print dialog</strong> (not direct USB). Choose <strong>TVS LP 46 NEO</strong> as the printer. The dialog sends front then back as two pages. Print and reprint do not spend credits.</p></div></div>
       <div class="step"><span class="num">4</span><div><h3>Search history</h3><p>Find saved tags by tag number or item name and reprint without re-entering weights.</p></div></div>
-      <div class="step"><span class="num">5</span><div><h3>Tune shop, tag, and items</h3><p>Settings has three sections: shop profile (name, address, phone, GST, logo), tag layout (prefix, millimetre size, font, offsets), and the item catalogue used on Create Tag. The logo appears in the shop sidebar, not on the printed hang tag. Shops can calibrate against the TVS LP 46 NEO without a code change.</p></div></div>
+      <div class="step"><span class="num">5</span><div><h3>Tune shop, tag, and items</h3><p>Settings has three sections: shop profile (name, address, phone, GST, logo), <strong>Tag Settings</strong> (prefix, tag width and height in millimetres, font, horizontal and vertical offsets), and the item catalogue used on Create Tag. Use Tag Settings to calibrate the layout on a TVS LP 46 NEO. The logo appears in the shop sidebar, not on the printed hang tag.</p></div></div>
     </div>
     <p>The diagram of this path, including billing and admin, is on <a href="progress.html#application-flow">Status and plans</a>.</p>
 
@@ -139,7 +150,7 @@
       </article>
       <article class="card">
         <h3>Print</h3>
-        <p>Two pages in one browser print job. Flip the label in the TVS LP 46 NEO between faces until a dual-sided path is proven.</p>
+        <p>Two pages in one browser print job. In the print dialog, select <strong>TVS LP 46 NEO</strong>. Flip the label in the printer between faces until a dual-sided path is proven.</p>
       </article>
     </div>
 
@@ -161,8 +172,77 @@
     <h2>Admin portal</h2>
     <p>Open <span class="tag">/admin-portal</span> to list shops, inspect credit ledgers, grant or reduce credits, set validity, and edit plan prices and allowances.</p>
 
+    <h2>Printer and tag media</h2>
+    <p>The counter setup targets a <strong>TVS Electronics LP 46 NEO</strong> desktop label printer loaded with <strong>jewellery barbell tags</strong> (rat-tail / dumbbell style). Shops calibrate layout in <strong>Settings → Tag Settings</strong> until the on-screen preview matches the physical label.</p>
+
+    <h3>Printer — TVS LP 46 NEO</h3>
+    <table>
+      <thead>
+        <tr><th>Specification</th><th>Value</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Brand / model</td><td>TVS Electronics LP 46 NEO</td></tr>
+        <tr><td>Type</td><td>6 ips desktop label printer</td></tr>
+        <tr><td>Resolution</td><td>203 DPI (~48 characters per line)</td></tr>
+        <tr><td>Print speed</td><td>6 ips (150 mm/s)</td></tr>
+        <tr><td>Interface</td><td>USB</td></tr>
+        <tr><td>Sensors</td><td>Movable black mark and gap sensor</td></tr>
+        <tr><td>Ribbon</td><td>Thermal transfer (up to 300 m; 1/2" or 1" core)</td></tr>
+        <tr><td>Max print width</td><td>~104 mm (4 inch class)</td></tr>
+      </tbody>
+    </table>
+    <p>In the browser print dialog, select <strong>TVS LP 46 NEO</strong>, set scale to <strong>100%</strong>, turn off headers and footers, and use minimum margins.</p>
+
+    <h3>Tag paper — jewellery barbell roll</h3>
+    <div class="grid">
+      <article class="card">
+        <h3>Material</h3>
+        <p>White glossy synthetic (polyester / polypropylene). Printed with a <strong>thermal transfer ribbon</strong>, not direct thermal.</p>
+      </article>
+      <article class="card">
+        <h3>Roll format</h3>
+        <p><strong>Two-up</strong> — two tags side by side on the liner. Gap or black mark between labels for the printer sensor.</p>
+      </article>
+      <article class="card">
+        <h3>Shape</h3>
+        <p>Printable face, narrow neck/bridge, and smaller adhesive tail. The tail wraps around the jewellery; the neck stays clear of the item.</p>
+      </article>
+    </div>
+
+    <h3>Tag size and printable area</h3>
+    <p>Dimensions below are from a physical ruler measurement on shop tags (reference setup: Bin Ismail Gold). Allow 1–2 mm margin inside the face for safe printing.</p>
+    <table>
+      <thead>
+        <tr><th>Dimension</th><th>Measured / estimated</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Total tag width (face + neck + tail)</td><td>~72–80 mm</td><td>Full strip on the liner</td></tr>
+        <tr><td>Tag height</td><td>~15 mm</td><td>Main rectangular section</td></tr>
+        <tr><td>Printable face (main body)</td><td>~50–55 mm × ~13–15 mm</td><td>Weights on front; barcode on back</td></tr>
+        <tr><td>Neck / bridge</td><td>~3–5 mm</td><td>Not printed — structural only</td></tr>
+        <tr><td>Tail (adhesive stub)</td><td>~15–22 mm</td><td>Not printed — sticks to the tag</td></tr>
+        <tr><td>Roll liner width (2-up)</td><td>~75–80 mm</td><td>Two tags across the roll</td></tr>
+      </tbody>
+    </table>
+    <pre class="diagram">┌──────────────────────────────┬──┬────────┐
+│     Printable main face      │██│  Tail  │
+│  (weights / barcode)         │██│(adhesive)
+└──────────────────────────────┴──┴────────┘
+         ~55 mm                    3mm  ~22mm</pre>
+    <p><strong>Suggested starting values in Tag Settings:</strong> width <strong>80 mm</strong>, height <strong>15 mm</strong> (app default height is 13 mm — raise to 15 mm to match measured tags), font <strong>7–8 pt</strong>. Adjust horizontal and vertical offsets after a test print.</p>
+
+    <h3>Calibration workflow</h3>
+    <div class="flow">
+      <div class="step"><span class="num">1</span><div><h3>Set Tag Settings</h3><p>Enter 80 × 15 mm, font size, and zero offsets as a starting point.</p></div></div>
+      <div class="step"><span class="num">2</span><div><h3>Test Print front</h3><p>Create a test tag and print page 1. Check that Grs.Wt / Stn.Wt / Nt.Wt sit inside the white face.</p></div></div>
+      <div class="step"><span class="num">3</span><div><h3>Print back and scan</h3><p>Flip the tag, print page 2, and scan the Code 128 barcode with a handheld scanner or phone.</p></div></div>
+      <div class="step"><span class="num">4</span><div><h3>Fine-tune offsets</h3><p>Adjust X/Y offset and font in Tag Settings until both faces align. Repeat until preview and physical tag match.</p></div></div>
+    </div>
+    <p>Engineering detail (CSS layout, driver settings, and code mapping) is in the <a href="technical.html#physical-setup">technical overview</a>.</p>
+
     <h2>TVS LP 46 NEO browser-print workflow</h2>
-    <p>Version 1 is built for the <strong>TVS LP 46 NEO</strong> label printer. A hosted website cannot talk directly to a USB printer in the shop, so the shop uses the browser print dialog: millimetre CSS for size, then page 1 (front) and page 2 (back). Choose the TVS LP 46 NEO in that dialog. After physical sizes and offsets are proven, a Windows print agent can be added for unattended USB printing.</p>
+    <p>This application is built for the <strong>TVS LP 46 NEO</strong> label printer. Printing goes through the <strong>browser print dialog</strong> — the hosted app does not send jobs directly to USB. When the dialog opens, choose <strong>TVS LP 46 NEO</strong> as the printer. Page 1 is the front (weights); page 2 is the back (item, barcode, tag number).</p>
+    <p>Tag size and offsets are configured in <strong>Settings → Tag Settings</strong> in millimetres: width, height, font size, and horizontal and vertical offsets. Shops test-print on the TVS LP 46 NEO and adjust those values until the physical label matches the on-screen preview. After calibration is proven, a Windows print agent could be added later for unattended USB printing.</p>
 
     <h2>Devices and browsers</h2>
     <p>The shop UI is responsive across phone, tablet, and desktop. On narrow screens the sidebar becomes a slide-out menu; forms and billing cards stack vertically; wide tables scroll horizontally. Controls use touch-friendly sizing. Printing still goes through the browser on each device — use Chrome, Edge, Firefox, or Safari on the counter PC or tablet where the TVS LP 46 NEO is installed.</p>

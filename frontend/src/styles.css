@@ -630,6 +630,33 @@ th {
   color: #52616f;
 }
 
+.printer-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid #d7dde4;
+  border-radius: 8px;
+  background: #f7f9fb;
+}
+
+.printer-info span {
+  display: block;
+  margin-bottom: 4px;
+  color: #68737f;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.printer-info strong {
+  color: #1f2933;
+  font-size: 14px;
+  font-weight: 700;
+}
+
 .item-add-row {
   display: grid;
   grid-template-columns: 1fr auto;

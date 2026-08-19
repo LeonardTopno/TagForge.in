@@ -15,6 +15,14 @@ A shop can register, create jewellery weight tags, preview front and back hang-t
 
 The back face encodes the tag number as Code 128. Print sends front then back as two browser pages.
 
+## Printing (TVS LP 46 NEO)
+
+This app is built for the **TVS LP 46 NEO** label printer.
+
+Printing goes through the **browser print dialog** — not direct USB from the hosted app. When you print, choose **TVS LP 46 NEO** in that dialog. Page 1 is the tag front (weights); page 2 is the back (item name, barcode, tag number).
+
+Tag size and offsets are set in **millimetres** under **Settings → Tag Settings** (width, height, font, horizontal and vertical offsets). Adjust those values and test-print on the TVS LP 46 NEO until the on-screen preview matches the physical hang tag.
+
 ## Docs
 
 Open these in a browser from the repo:
@@ -170,8 +178,8 @@ Local purchases can be confirmed in the app for testing. Replace that path with 
 
 ## Notes
 
-- Browser printing is intentionally the first implementation because the hosted app cannot directly access a USB printer in a shop.
-- Tag size, font, and offsets are stored per shop in settings so the layout can be calibrated on a TVS LP 46 NEO.
+- The app targets the **TVS LP 46 NEO**. Printing uses the browser print dialog; select that printer when prompted. There is no direct USB path from the web app.
+- Calibrate layout in **Settings → Tag Settings**: millimetre width, height, font, and X/Y offsets per shop.
 - Each shop keeps an item catalogue (Ring, Chain, and so on) used as the Create Tag dropdown.
 - Shop logos are uploaded in Settings and shown in the sidebar. They are not printed on the hang tag.
 - The shop UI uses a collapsible menu on narrow screens, scrollable tables, and touch-friendly controls.

@@ -1326,6 +1326,24 @@ function SettingsView({
 
       {section === 'tag' && (
         <div className="entry-panel settings-panel">
+          <div className="printer-info">
+            <div>
+              <span>Label printer</span>
+              <strong>TVS LP 46 NEO</strong>
+            </div>
+            <div>
+              <span>Manufacturer / model</span>
+              <strong>TVS Electronics · LP 46 NEO</strong>
+            </div>
+            <div>
+              <span>Tag paper type</span>
+              <strong>Jewellery hang tag (folded butterfly label)</strong>
+            </div>
+          </div>
+          <p className="settings-help">
+            Printing uses the browser print dialog. Select <strong>TVS LP 46 NEO</strong> as the printer.
+            Tune millimetre size and offsets below to match your hang-tag stock.
+          </p>
           <div className="form-grid compact">
             <label>
               Tag prefix
