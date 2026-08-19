@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jewellery Tag Printer — Application Overview</title>
+  <style>
+    :root {
+      --ink: #1f2933;
+      --muted: #5b6773;
+      --navy: #20313f;
+      --gold: #b8893a;
+      --paper: #f4f1eb;
+      --card: #ffffff;
+      --line: #d8d0c4;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font: 16px/1.55 Inter, ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+    }
+    header {
+      background: var(--navy);
+      color: #f8fafc;
+      padding: 48px 24px 40px;
+    }
+    header .wrap, main, footer .wrap { max-width: 920px; margin: 0 auto; }
+    .eyebrow { letter-spacing: 0.12em; text-transform: uppercase; font-size: 12px; color: #c4b08a; margin: 0 0 10px; }
+    h1 { margin: 0 0 12px; font-size: 2.2rem; font-weight: 650; }
+    header p { margin: 0; max-width: 62ch; color: #d5dde6; }
+    nav { margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; }
+    nav a, .btn {
+      color: #20313f;
+      background: #fff;
+      text-decoration: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    nav a.ghost { background: transparent; color: #f8fafc; border: 1px solid #4b6275; }
+    main { padding: 40px 24px 64px; }
+    h2 { margin: 36px 0 12px; font-size: 1.35rem; }
+    h3 { margin: 0 0 8px; font-size: 1.05rem; }
+    p, li { color: var(--muted); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 20px 0; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 18px 18px 16px;
+    }
+    .flow { display: grid; gap: 10px; margin: 16px 0 0; }
+    .step {
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: 12px;
+      align-items: start;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+    .num {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--navy); color: #fff;
+      display: grid; place-items: center; font-weight: 700; font-size: 14px;
+    }
+    table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 15px; }
+    th { background: #ece6dc; color: var(--ink); }
+    .tag {
+      display: inline-block;
+      background: #efe3cd;
+      color: #7a5a1e;
+      border-radius: 999px;
+      padding: 2px 10px;
+      font-size: 12px;
+      font-weight: 650;
+    }
+    footer { border-top: 1px solid var(--line); padding: 20px 24px 32px; color: var(--muted); font-size: 14px; }
+    footer a { color: var(--navy); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <p class="eyebrow">Product overview</p>
+      <h1>Jewellery Tag Printer</h1>
+      <p>A multi-tenant web app for jewellery shops to create weight tags, preview them at real millimetre sizes, and print through the browser on a TVS LP 46 NEO label printer.</p>
+      <nav>
+        <a href="technical.html">Technical overview</a>
+        <a class="ghost" href="../README.md">README</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <p>Each shop registers its own account. Tags, print history, layout settings, and credits stay isolated to that shop. This version does not print barcodes.</p>
+
+    <h2>Who it is for</h2>
+    <div class="grid">
+      <article class="card">
+        <h3>Shop owners</h3>
+        <p>Register the shop, buy credits or an unlimited plan, and keep print layout calibrated for the counter printer.</p>
+      </article>
+      <article class="card">
+        <h3>Counter staff</h3>
+        <p>Enter item details, check net weight, preview the label, then print or reprint from history.</p>
+      </article>
+      <article class="card">
+        <h3>Platform admin</h3>
+        <p>Use the admin portal to review tenants, adjust credits, and edit billing plans.</p>
+      </article>
+    </div>
+
+    <h2>What a shop can do</h2>
+    <div class="flow">
+      <div class="step"><span class="num">1</span><div><h3>Register or sign in</h3><p>Create a shop with an owner email. New shops receive free tag credits so they can try printing immediately.</p></div></div>
+      <div class="step"><span class="num">2</span><div><h3>Create a jewellery tag</h3><p>Enter item name, category, purity, pieces, gross weight, stone weight, other deduction, and copy count. Net weight is calculated automatically. Each shop gets sequential tag numbers with a custom prefix.</p></div></div>
+      <div class="step"><span class="num">3</span><div><h3>Preview and print</h3><p>The on-screen preview uses millimetre CSS so the layout matches the physical label. Printing uses the browser print dialog. First print is billed as copies; later reprints spend credits again unless unlimited printing is active.</p></div></div>
+      <div class="step"><span class="num">4</span><div><h3>Search history</h3><p>Find saved tags by tag number or item name and reprint without re-entering weights.</p></div></div>
+      <div class="step"><span class="num">5</span><div><h3>Tune the printer layout</h3><p>Settings store tag width, height, font size, horizontal and vertical offsets, shop name on the label, and tag prefix. Shops can calibrate against the TVS LP 46 NEO without a code change.</p></div></div>
+    </div>
+
+    <h2>Billing for shops</h2>
+    <p>Printing is sold as tag credits. The displayed price per tag defaults to ₹2. Credits expire with the paid plan window. An unlimited plan skips per-tag debit while it is active.</p>
+    <table>
+      <thead>
+        <tr><th>Plan</th><th>Price</th><th>What the shop gets</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Free on signup</td><td>—</td><td>15 starter credits (configurable)</td></tr>
+        <tr><td>Starter</td><td>₹1,000</td><td>500 credits, 90 days</td></tr>
+        <tr><td>Growth</td><td>₹1,500</td><td>750 credits, 90 days</td></tr>
+        <tr><td>Pro Annual</td><td>₹10,000</td><td>Unlimited printing for 365 days</td></tr>
+      </tbody>
+    </table>
+    <p>Local testing can confirm a purchase in-app. Production payment is intended to use Razorpay later.</p>
+
+    <h2>Admin portal</h2>
+    <p>Open <span class="tag">/admin-portal</span> to list shops, inspect credit ledgers, grant or reduce credits, set validity, and edit plan prices and allowances.</p>
+
+    <h2>Why printing is in the browser</h2>
+    <p>A hosted website cannot talk directly to a USB label printer in the shop. Version 1 therefore uses the browser print dialog and millimetre CSS. After physical sizes and offsets are proven, a Windows print agent can be added for unattended USB printing.</p>
+  </main>
+  <footer>
+    <div class="wrap">Jewellery Tag Printer · <a href="technical.html">Technical overview</a></div>
+  </footer>
+</body>
+</html>

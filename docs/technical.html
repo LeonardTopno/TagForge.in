@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jewellery Tag Printer — Technical Overview</title>
+  <style>
+    :root {
+      --ink: #1f2933;
+      --muted: #5b6773;
+      --navy: #20313f;
+      --paper: #f4f1eb;
+      --card: #ffffff;
+      --line: #d8d0c4;
+      --code: #15232e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font: 16px/1.55 Inter, ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+    }
+    header {
+      background: var(--navy);
+      color: #f8fafc;
+      padding: 48px 24px 40px;
+    }
+    header .wrap, main, footer .wrap { max-width: 980px; margin: 0 auto; }
+    .eyebrow { letter-spacing: 0.12em; text-transform: uppercase; font-size: 12px; color: #9ec5e0; margin: 0 0 10px; }
+    h1 { margin: 0 0 12px; font-size: 2.2rem; font-weight: 650; }
+    header p { margin: 0; max-width: 70ch; color: #d5dde6; }
+    nav { margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; }
+    nav a {
+      color: #20313f;
+      background: #fff;
+      text-decoration: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    nav a.ghost { background: transparent; color: #f8fafc; border: 1px solid #4b6275; }
+    main { padding: 40px 24px 64px; }
+    h2 { margin: 36px 0 12px; font-size: 1.35rem; }
+    h3 { margin: 20px 0 8px; font-size: 1.05rem; }
+    p, li { color: var(--muted); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 18px;
+    }
+    code, pre, .mono { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; }
+    code {
+      background: #ece6dc;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.9em;
+      color: var(--ink);
+    }
+    pre {
+      background: var(--code);
+      color: #e8eef4;
+      padding: 14px 16px;
+      border-radius: 12px;
+      overflow: auto;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; }
+    th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); font-size: 14px; vertical-align: top; }
+    th { background: #ece6dc; color: var(--ink); }
+    td:first-child { white-space: nowrap; font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
+    .method { font-weight: 700; color: #1d6a4f; }
+    footer { border-top: 1px solid var(--line); padding: 20px 24px 32px; color: var(--muted); font-size: 14px; }
+    footer a { color: var(--navy); }
+    ul { padding-left: 1.2rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <p class="eyebrow">Engineering</p>
+      <h1>Technical overview</h1>
+      <p>Architecture, data model, API surface, configuration, and how credits and printing are implemented in this repository.</p>
+      <nav>
+        <a href="application.html">Application overview</a>
+        <a class="ghost" href="../README.md">README</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <h2>Stack</h2>
+    <div class="grid">
+      <article class="card">
+        <h3>Backend</h3>
+        <p>FastAPI 0.115, SQLAlchemy 2 async, Pydantic Settings, Uvicorn. Passlib/bcrypt for passwords, python-jose JWT for sessions.</p>
+      </article>
+      <article class="card">
+        <h3>Frontend</h3>
+        <p>React 19, Vite 6, TypeScript. Single-page UI in <code>frontend/src/App.tsx</code>. Icons from lucide-react. Auth token in <code>localStorage</code>.</p>
+      </article>
+      <article class="card">
+        <h3>Data and runtimes</h3>
+        <p>SQLite via aiosqlite for local runs. PostgreSQL 16 + asyncpg under Docker Compose. Tables created on startup.</p>
+      </article>
+    </div>
+
+    <h2>Repository layout</h2>
+<pre>backend/app/          FastAPI app, models, schemas, security
+backend/.env.example  Runtime configuration
+frontend/src/         React UI, API client, types, print CSS
+docker-compose.yml    postgres, backend, frontend
+docs/                 These HTML overviews</pre>
+
+    <h2>Tenancy and auth</h2>
+    <ul>
+      <li>A <code>Shop</code> is the tenant. Users belong to one shop via <code>shop_id</code>.</li>
+      <li>Roles: <code>owner</code>, <code>operator</code>, <code>admin</code>. Admin routes call <code>require_admin()</code>.</li>
+      <li>Register creates shop + owner, hashes the password, and writes a credit ledger grant.</li>
+      <li>Login and <code>/me</code> return a JWT plus nested user and shop payloads.</li>
+      <li>Tag list, create, print, settings, dashboard, and billing queries always filter by <code>current_user.shop_id</code>.</li>
+    </ul>
+
+    <h2>Data model</h2>
+    <table>
+      <thead>
+        <tr><th>Table</th><th>Role</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>shops</td><td>Tenant identity, tag numbering, millimetre print layout, credit balance, expiry, unlimited-until</td></tr>
+        <tr><td>users</td><td>Email, password hash, role, shop foreign key</td></tr>
+        <tr><td>jewellery_tags</td><td>Item, purity, weights, copies, print_count; unique <code>(shop_id, tag_number)</code></td></tr>
+        <tr><td>print_logs</td><td>Who printed which tag, copies, timestamp</td></tr>
+        <tr><td>billing_plans</td><td>Seeded Starter / Growth / Pro plans</td></tr>
+        <tr><td>plan_purchases</td><td>Pending/paid purchases; placeholder Razorpay ids for local testing</td></tr>
+        <tr><td>credit_ledger_entries</td><td>Credit/debit history with balance_after</td></tr>
+      </tbody>
+    </table>
+    <p>Net weight is <code>gross − stone − other_deduction</code>, quantized to 3 decimals. Negative net weight is rejected with HTTP 422.</p>
+
+    <h2>HTTP API</h2>
+    <p>Base URL defaults to <code>http://localhost:8000</code>. Interactive docs: <code>/docs</code>. Authenticated routes send <code>Authorization: Bearer &lt;token&gt;</code>.</p>
+    <table>
+      <thead>
+        <tr><th>Method / path</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="method">GET</span> /health</td><td>Liveness</td></tr>
+        <tr><td><span class="method">POST</span> /auth/register</td><td>Create shop and owner; grant free credits</td></tr>
+        <tr><td><span class="method">POST</span> /auth/login</td><td>JWT + shop</td></tr>
+        <tr><td><span class="method">GET</span> /me</td><td>Restore session</td></tr>
+        <tr><td><span class="method">GET</span> /dashboard</td><td>Tag/print counts, recent tags, billing summary</td></tr>
+        <tr><td><span class="method">GET</span> /tags</td><td>Last 100 tags; optional <code>search</code></td></tr>
+        <tr><td><span class="method">POST</span> /tags</td><td>Allocate tag number, debit credits for copies</td></tr>
+        <tr><td><span class="method">POST</span> /tags/{id}/print</td><td>Log print; debit on reprint if print_count &gt; 0</td></tr>
+        <tr><td><span class="method">GET/PUT</span> /settings</td><td>Shop layout and prefix</td></tr>
+        <tr><td><span class="method">GET</span> /billing/summary|plans|ledger</td><td>Balance and catalogue</td></tr>
+        <tr><td><span class="method">POST</span> /billing/purchases</td><td>Create local test order</td></tr>
+        <tr><td><span class="method">POST</span> /billing/purchases/{id}/confirm</td><td>Mark paid and grant credits or unlimited window</td></tr>
+        <tr><td><span class="method">GET/PUT</span> /admin/plans</td><td>Admin plan maintenance</td></tr>
+        <tr><td><span class="method">GET</span> /admin/tenants[/{id}/ledger]</td><td>Tenant list and ledger</td></tr>
+        <tr><td><span class="method">POST</span> /admin/tenants/{id}/credit-adjustments</td><td>Set/delta credits, validity, unlimited</td></tr>
+      </tbody>
+    </table>
+    <p>Insufficient credits return HTTP 402. Duplicate email returns 409. Admin without role <code>admin</code> returns 403.</p>
+
+    <h2>Credits algorithm</h2>
+    <ul>
+      <li><code>charge_tag_credits</code> no-ops when copies ≤ 0 or <code>unlimited_until</code> is still in the future.</li>
+      <li>Expired <code>credits_expire_at</code> zeros the shop balance before charging.</li>
+      <li>Create tag always charges <code>copies</code>. Print charges again only when <code>print_count &gt; 0</code> (reprint).</li>
+      <li>Paid credit plans add credits and extend expiry; unlimited plans extend <code>unlimited_until</code>.</li>
+      <li>Tag price and signup grant come from settings: <code>TAG_PRICE_INR</code>, <code>FREE_REGISTRATION_CREDITS</code>.</li>
+    </ul>
+
+    <h2>Frontend behaviour</h2>
+    <ul>
+      <li>Shop UI views: create, history, billing, settings.</li>
+      <li>Path <code>/admin-portal</code> swaps in the admin shell (same SPA, no router library).</li>
+      <li>Preview sizes the label from shop millimetre fields; print uses CSS <code>@media print</code>.</li>
+      <li><code>frontend/src/api.ts</code> wraps fetch; <code>VITE_API_BASE_URL</code> overrides the API host.</li>
+    </ul>
+
+    <h2>Configuration</h2>
+    <table>
+      <thead>
+        <tr><th>Variable</th><th>Default</th><th>Used for</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>DATABASE_URL</td><td>sqlite+aiosqlite:///./tag_printer.db</td><td>SQLAlchemy async engine</td></tr>
+        <tr><td>ALLOWED_ORIGINS</td><td>localhost:5173 variants</td><td>CORS</td></tr>
+        <tr><td>SECRET_KEY</td><td>dev placeholder</td><td>JWT signing</td></tr>
+        <tr><td>TAG_PRICE_INR</td><td>2</td><td>Billing summary display price</td></tr>
+        <tr><td>FREE_REGISTRATION_CREDITS</td><td>15</td><td>Signup grant and shop opening balance</td></tr>
+        <tr><td>VITE_API_BASE_URL</td><td>http://localhost:8000</td><td>Frontend API client</td></tr>
+      </tbody>
+    </table>
+    <p>Loaded in <code>backend/app/config.py</code> via Pydantic Settings from <code>backend/.env</code>.</p>
+
+    <h2>Local run</h2>
+    <p>Without Docker: venv + <code>uvicorn app.main:app --reload</code> in <code>backend/</code>, and <code>npm run dev</code> in <code>frontend/</code>. With Docker: <code>docker compose up --build</code> starts Postgres 16, API on 8000, Vite on 5173. SQLite schema migrations for extra shop columns are applied in <code>create_database()</code> for local files only.</p>
+
+    <h2>Known gaps</h2>
+    <ul>
+      <li>Razorpay Orders/payments are stubbed with local order/payment ids.</li>
+      <li>No barcode generation (by product requirement for this milestone).</li>
+      <li>No Windows USB print agent yet.</li>
+      <li>Operator role exists on the model but registration only creates owners.</li>
+    </ul>
+  </main>
+  <footer>
+    <div class="wrap">Jewellery Tag Printer · <a href="application.html">Application overview</a></div>
+  </footer>
+</body>
+</html>
