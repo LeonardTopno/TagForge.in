@@ -169,6 +169,93 @@ To deploy with Compose, copy `backend/.env.example` to `backend/.env`, set produ
 - Mount a named volume at `backend/uploads` so logos survive restarts.
 - Set `VITE_API_BASE_URL` in the frontend **build** stage to the URL browsers will call.
 
+### AWS pilot deploy
+
+Lean layout for a **1–5 shop pilot** on AWS Free plan credits (~$200 / 6 months). Expect **~$10–12/month** AWS spend if you avoid RDS and NAT Gateway — enough headroom for the full 6-month window at low traffic.
+
+Printing still happens in the shop browser (TVS LP 46 NEO). AWS only hosts the web app and API.
+
+#### Architecture
+
+```text
+Shop browser
+  ├─ https://tags.example.com     → CloudFront → S3 (frontend dist)
+  └─ https://api.example.com      → EC2 t4g.micro (FastAPI + /uploads)
+                                        └─ Neon Postgres (free, outside AWS)
+```
+
+| Layer | Service | Notes |
+| --- | --- | --- |
+| Frontend | **S3 + CloudFront** | SPA fallback to `index.html` for `/admin-portal` |
+| API | **EC2 `t4g.micro`** (Mumbai `ap-south-1`) | Uvicorn via systemd; Nginx optional for TLS |
+| Database | **[Neon](https://neon.tech) free Postgres** | Cheaper than RDS for a pilot; use `postgresql+asyncpg://` |
+| Logos | **EBS volume** on EC2 | Mount at `backend/uploads/` — no code changes |
+| DNS | Route 53 or GoDaddy | `tags.` → CloudFront, `api.` → EC2 Elastic IP |
+| TLS | ACM on CloudFront + Nginx/Certbot on API | HTTPS required before real shop use |
+
+**Cheaper variant:** host the frontend on [Cloudflare Pages](https://pages.cloudflare.com) (free) and run only EC2 on AWS (~$8–11/month).
+
+#### Estimated cost (pilot traffic)
+
+| Item | ~USD/month |
+| --- | --- |
+| EC2 `t4g.micro` (24/7) | $7–9 |
+| EBS 10–20 GB | $1–2 |
+| S3 + CloudFront | $1–3 |
+| Neon Postgres | $0 (not AWS) |
+| **AWS subtotal** | **~$10–14** |
+
+At ~$12/month, $200 credits cover **well over 6 months** for a small pilot. Set billing alarms at $25, $50, and $100.
+
+**Avoid on the pilot:** RDS (~$15–25/mo extra), NAT Gateway (~$30+/mo), unattached Elastic IPs, oversized instances.
+
+#### Deploy checklist
+
+1. Create a **Neon** database; copy the connection string.
+2. Launch **EC2 `t4g.micro`** (Ubuntu 24.04, `ap-south-1`), attach a **10–20 GB EBS** volume for uploads.
+3. Security group: allow **443** (and **80** for Certbot) from the internet; restrict Neon to the EC2 public IP.
+4. On EC2: clone repo, install Python 3.12, `pip install -r backend/requirements.txt`, run Uvicorn with systemd on port 8000.
+5. Mount EBS at `/app/uploads` (or symlink to `backend/uploads`).
+6. Build frontend with the public API URL, upload `dist/` to S3, front with CloudFront.
+7. Point DNS: `tags.example.com` → CloudFront, `api.example.com` → EC2 Elastic IP.
+8. Verify `GET https://api.example.com/health` returns OK.
+
+#### Environment variables
+
+Backend `backend/.env` on EC2:
+
+```env
+APP_ENV=production
+DATABASE_URL=postgresql+asyncpg://USER:PASSWORD@ep-xxx.ap-southeast-1.aws.neon.tech/tag_printer?sslmode=require
+ALLOWED_ORIGINS=https://tags.example.com
+SECRET_KEY=<long-random-string>
+TAG_PRICE_INR=2
+FREE_REGISTRATION_CREDITS=15
+```
+
+Frontend build (run locally or in CI before uploading to S3):
+
+```bash
+cd frontend
+npm ci
+VITE_API_BASE_URL=https://api.example.com npm run build
+```
+
+Upload the contents of `frontend/dist/` to the S3 bucket behind CloudFront.
+
+#### CloudFront SPA routing
+
+Configure custom error responses so client-side routes work:
+
+- **403** → `/index.html` with response code **200**
+- **404** → `/index.html` with response code **200**
+
+#### After the pilot
+
+- **Upgrade** AWS to a paid plan and keep the same stack (~$10–15/mo lean), or
+- **Migrate** to Render / Railway + Neon + Cloudflare Pages, or
+- **Move logos to S3** when you need EC2 replacements without EBS snapshots.
+
 Open ports:
 
 | Service | Dev port | Production |
