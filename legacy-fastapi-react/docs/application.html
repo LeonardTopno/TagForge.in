@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jewellery Tag Printer — Application Overview</title>
+  <style>
+    :root {
+      --ink: #1f2933;
+      --muted: #5b6773;
+      --navy: #20313f;
+      --gold: #b8893a;
+      --paper: #f4f1eb;
+      --card: #ffffff;
+      --line: #d8d0c4;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font: 16px/1.55 Inter, ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+    }
+    header {
+      background: var(--navy);
+      color: #f8fafc;
+      padding: 48px 24px 40px;
+    }
+    header .wrap, main, footer .wrap { max-width: 920px; margin: 0 auto; }
+    .eyebrow { letter-spacing: 0.12em; text-transform: uppercase; font-size: 12px; color: #c4b08a; margin: 0 0 10px; }
+    h1 { margin: 0 0 12px; font-size: 2.2rem; font-weight: 650; }
+    header p { margin: 0; max-width: 62ch; color: #d5dde6; }
+    nav { margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; }
+    nav a, .btn {
+      color: #20313f;
+      background: #fff;
+      text-decoration: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    nav a.ghost { background: transparent; color: #f8fafc; border: 1px solid #4b6275; }
+    main { padding: 40px 24px 64px; }
+    h2 { margin: 36px 0 12px; font-size: 1.35rem; }
+    h3 { margin: 0 0 8px; font-size: 1.05rem; }
+    p, li { color: var(--muted); }
+    a { color: var(--navy); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 20px 0; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 18px 18px 16px;
+    }
+    .flow { display: grid; gap: 10px; margin: 16px 0 0; }
+    .step {
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: 12px;
+      align-items: start;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+    .num {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--navy); color: #fff;
+      display: grid; place-items: center; font-weight: 700; font-size: 14px;
+    }
+    table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 15px; }
+    th { background: #ece6dc; color: var(--ink); }
+    .tag {
+      display: inline-block;
+      background: #efe3cd;
+      color: #7a5a1e;
+      border-radius: 999px;
+      padding: 2px 10px;
+      font-size: 12px;
+      font-weight: 650;
+    }
+    footer { border-top: 1px solid var(--line); padding: 20px 24px 32px; color: var(--muted); font-size: 14px; }
+    footer a { color: var(--navy); }
+    pre.diagram {
+      margin: 16px 0 0;
+      padding: 14px 16px;
+      background: #ece6dc;
+      border-radius: 12px;
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--ink);
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <p class="eyebrow">TVS LP 46 NEO browser-print workflow</p>
+      <h1>Jewellery Tag Printer</h1>
+      <p>A multi-tenant web app for jewellery shops to create weight tags, preview a single-side hang tag at real millimetre sizes, and print through the browser on a TVS LP 46 NEO label printer.</p>
+      <nav>
+        <a href="technical.html">Technical overview</a>
+        <a href="progress.html">Status and plans</a>
+        <a class="ghost" href="../README.md">README</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <p>Each shop registers its own account. Tags, print history, layout settings, and credits stay isolated to that shop. The hang-tag preview prints weights and barcode on <strong>one face</strong>, with a centre fold mark — fold the tag so the sticker backs meet.</p>
+
+    <h2>Who it is for</h2>
+    <div class="grid">
+      <article class="card">
+        <h3>Shop owners</h3>
+        <p>Register the shop, upload a logo, buy credits or an unlimited plan, and keep print layout calibrated for the counter printer.</p>
+      </article>
+      <article class="card">
+        <h3>Counter staff</h3>
+        <p>Enter item details, check net weight, preview the label, then print or reprint from history.</p>
+      </article>
+      <article class="card">
+        <h3>Platform admin</h3>
+        <p>Use the admin portal to review tenants, adjust credits, and edit billing plans.</p>
+      </article>
+    </div>
+
+    <h2>What a shop can do</h2>
+    <div class="flow">
+      <div class="step"><span class="num">1</span><div><h3>Register or sign in</h3><p>Create a shop with an owner email. New shops receive free tag credits so they can try printing immediately.</p></div></div>
+      <div class="step"><span class="num">2</span><div><h3>Create a jewellery tag</h3><p>Pick an item from the shop catalogue, choose Gold or Silver, and enter gross and stone weight. Net weight is calculated automatically (gross − stone). Each shop gets sequential tag numbers with a custom prefix. Creating a tag spends 1 credit.</p></div></div>
+      <div class="step"><span class="num">3</span><div><h3>Preview and print</h3><p>Actual Preview shows one printable face at millimetre size: left panel Grs.Wt / Stn.Wt / Nt.Wt, centre fold mark, right panel category + item, Code 128 barcode, and tag number. Save, Save &amp; Print, or Test Print opens the <strong>browser print dialog</strong> (not direct USB). Choose <strong>TVS LP 46 NEO</strong> as the printer — one page. Fold on the centre mark after printing. Print and reprint do not spend credits.</p></div></div>
+      <div class="step"><span class="num">4</span><div><h3>Search history</h3><p>Find saved tags by tag number or item name and reprint without re-entering weights.</p></div></div>
+      <div class="step"><span class="num">5</span><div><h3>Tune shop, tag, and items</h3><p>Settings has three sections: shop profile (name, address, phone, GST, logo), <strong>Tag Settings</strong> (printer and tag paper summary, prefix, millimetre width/height, font, offsets), and the item catalogue. Tag Settings shows the TVS LP 46 NEO target and fold-at-centre instructions. The logo appears in the shop sidebar, not on the printed hang tag.</p></div></div>
+    </div>
+    <p>The diagram of this path, including billing and admin, is on <a href="progress.html#application-flow">Status and plans</a>.</p>
+
+    <h2>Tag layout — single side, fold at centre</h2>
+    <div class="grid">
+      <article class="card">
+        <h3>Left panel</h3>
+        <p>Grs.Wt, Stn.Wt, and Nt.Wt on the left half of the printable face.</p>
+      </article>
+      <article class="card">
+        <h3>Centre fold</h3>
+        <p>Dashed fold mark in the preview. After printing, fold here so the sticker backs on each half meet.</p>
+      </article>
+      <article class="card">
+        <h3>Right panel</h3>
+        <p>Category + item name (e.g. GOLD RING), Code 128 barcode of the tag number, then the tag number.</p>
+      </article>
+    </div>
+    <p>The barbell neck and tail (to the right of the white face) are structural only — not printed. Printing is <strong>one browser page</strong> via the TVS LP 46 NEO dialog.</p>
+
+    <h2>Billing for shops</h2>
+    <p>Creating a tag spends 1 credit. The displayed price per tag defaults to ₹2. Credits expire with the paid plan window. An unlimited plan skips the create debit while it is active. Print and reprint do not spend credits.</p>
+    <table>
+      <thead>
+        <tr><th>Plan</th><th>Price</th><th>What the shop gets</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Free on signup</td><td>—</td><td>15 starter credits (configurable)</td></tr>
+        <tr><td>Starter</td><td>₹1,000</td><td>500 credits, 90 days</td></tr>
+        <tr><td>Growth</td><td>₹1,500</td><td>750 credits, 90 days</td></tr>
+        <tr><td>Pro Annual</td><td>₹10,000</td><td>Unlimited printing for 365 days</td></tr>
+      </tbody>
+    </table>
+    <p>Local testing can confirm a purchase in-app. Production payment is intended to use Razorpay later.</p>
+
+    <h2>Admin portal</h2>
+    <p>Open <span class="tag">/admin-portal</span> to list shops, inspect credit ledgers, grant or reduce credits, set validity, and edit plan prices and allowances.</p>
+
+    <h2>Printer and tag media</h2>
+    <p>The counter setup targets a <strong>TVS Electronics LP 46 NEO</strong> desktop label printer loaded with <strong>jewellery barbell tags</strong> (rat-tail / dumbbell style). Shops calibrate layout in <strong>Settings → Tag Settings</strong> until the on-screen preview matches the physical label.</p>
+
+    <h3>Printer — TVS LP 46 NEO</h3>
+    <table>
+      <thead>
+        <tr><th>Specification</th><th>Value</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Brand / model</td><td>TVS Electronics LP 46 NEO</td></tr>
+        <tr><td>Type</td><td>6 ips desktop label printer</td></tr>
+        <tr><td>Resolution</td><td>203 DPI (~48 characters per line)</td></tr>
+        <tr><td>Print speed</td><td>6 ips (150 mm/s)</td></tr>
+        <tr><td>Interface</td><td>USB</td></tr>
+        <tr><td>Sensors</td><td>Movable black mark and gap sensor</td></tr>
+        <tr><td>Ribbon</td><td>Thermal transfer (up to 300 m; 1/2" or 1" core)</td></tr>
+        <tr><td>Max print width</td><td>~104 mm (4 inch class)</td></tr>
+      </tbody>
+    </table>
+    <p>In the browser print dialog, select <strong>TVS LP 46 NEO</strong>, set scale to <strong>100%</strong>, turn off headers and footers, and use minimum margins.</p>
+
+    <h3>Tag paper — jewellery barbell roll</h3>
+    <div class="grid">
+      <article class="card">
+        <h3>Material</h3>
+        <p>White glossy synthetic (polyester / polypropylene). Printed with a <strong>thermal transfer ribbon</strong>, not direct thermal.</p>
+      </article>
+      <article class="card">
+        <h3>Roll format</h3>
+        <p><strong>Two-up</strong> — two tags side by side on the liner. Gap or black mark between labels for the printer sensor.</p>
+      </article>
+      <article class="card">
+        <h3>Shape</h3>
+        <p>Printable face, narrow neck/bridge, and smaller adhesive tail. The tail wraps around the jewellery; the neck stays clear of the item.</p>
+      </article>
+    </div>
+
+    <h3>Tag size and printable area</h3>
+    <p>Dimensions below are from a physical ruler measurement on shop tags (reference setup: Bin Ismail Gold). Allow 1–2 mm margin inside the face for safe printing.</p>
+    <table>
+      <thead>
+        <tr><th>Dimension</th><th>Measured / estimated</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Total tag width (face + neck + tail)</td><td>~72–80 mm</td><td>Full strip on the liner</td></tr>
+        <tr><td>Tag height</td><td>~15–18 mm</td><td>Main rectangular section; app default 18 mm</td></tr>
+        <tr><td>Printable face (main body)</td><td>~50–55 mm × ~15–18 mm</td><td>Left: weights · centre fold · right: item + barcode</td></tr>
+        <tr><td>Neck / bridge</td><td>~3–5 mm</td><td>Not printed — structural only</td></tr>
+        <tr><td>Tail (adhesive stub)</td><td>~15–22 mm</td><td>Not printed — sticks to the tag</td></tr>
+        <tr><td>Roll liner width (2-up)</td><td>~75–80 mm</td><td>Two tags across the roll</td></tr>
+      </tbody>
+    </table>
+    <pre class="diagram">┌───────────────┬─┬───────────────┬──┬────────┐
+│ Left: weights │││ Right: barcode│██│  Tail  │
+│  Grs/Stn/Nt   │││  item + tag # │██│(adhesive)
+└───────────────┴─┴───────────────┴──┴────────┘
+      fold ↑              neck      ~18mm</pre>
+    <p><strong>Suggested starting values in Tag Settings:</strong> width <strong>80 mm</strong>, height <strong>18 mm</strong> (app default), font <strong>7–8 pt</strong>. Adjust horizontal and vertical offsets after a test print.</p>
+
+    <h3>Calibration workflow</h3>
+    <div class="flow">
+      <div class="step"><span class="num">1</span><div><h3>Set Tag Settings</h3><p>Enter 80 × 18 mm, font size, and zero offsets as a starting point. Confirm printer shows TVS LP 46 NEO.</p></div></div>
+      <div class="step"><span class="num">2</span><div><h3>Test print</h3><p>Create a test tag and print one page. Check weights sit in the left panel and barcode in the right panel inside the white face.</p></div></div>
+      <div class="step"><span class="num">3</span><div><h3>Fold and scan</h3><p>Fold on the centre mark so sticker backs meet. Scan the Code 128 barcode with a handheld scanner or phone.</p></div></div>
+      <div class="step"><span class="num">4</span><div><h3>Fine-tune offsets</h3><p>Adjust X/Y offset and font in Tag Settings until preview and folded physical tag match.</p></div></div>
+    </div>
+    <p>Engineering detail (CSS layout, driver settings, and code mapping) is in the <a href="technical.html#physical-setup">technical overview</a>.</p>
+
+    <h2>TVS LP 46 NEO browser-print workflow</h2>
+    <p>This application is built for the <strong>TVS LP 46 NEO</strong> label printer. Printing goes through the <strong>browser print dialog</strong> — the hosted app does not send jobs directly to USB. When the dialog opens, choose <strong>TVS LP 46 NEO</strong> as the printer. One page prints the full face: weights left, fold mark centre, item and barcode right. Fold the tag on the centre line after printing.</p>
+    <p>Tag size and offsets are configured in <strong>Settings → Tag Settings</strong> in millimetres. The Tag Settings screen also lists the target printer, tag paper type (single-side print, fold at centre), and calibration help text.</p>
+
+    <h2>Devices and browsers</h2>
+    <p>The shop UI is responsive across phone, tablet, and desktop. On narrow screens the sidebar becomes a slide-out menu; forms and billing cards stack vertically; wide tables scroll horizontally. Controls use touch-friendly sizing. Printing still goes through the browser on each device — use Chrome, Edge, Firefox, or Safari on the counter PC or tablet where the TVS LP 46 NEO is installed.</p>
+  </main>
+  <footer>
+    <div class="wrap">Jewellery Tag Printer · <a href="technical.html">Technical overview</a> · <a href="progress.html">Status and plans</a></div>
+  </footer>
+</body>
+</html>

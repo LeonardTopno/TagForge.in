@@ -1,0 +1,22 @@
+DirectoryIndex index.php install.php
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^includes/ - [F,L]
+  RewriteRule ^legacy-fastapi-react/ - [F,L]
+  RewriteRule ^sql/ - [F,L]
+</IfModule>
+
+<FilesMatch "\.(sql|md|json)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+<IfModule mod_php.c>
+  php_value upload_max_filesize 5M
+  php_value post_max_size 8M
+</IfModule>

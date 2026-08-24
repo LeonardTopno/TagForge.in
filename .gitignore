@@ -1,13 +1,16 @@
 .pnpm-store/
 
-backend/.venv/
-backend/__pycache__/
-backend/app/__pycache__/
-backend/*.db
-backend/uploads/
+includes/config.php
+uploads/logos/*
+!uploads/logos/.gitkeep
 
-frontend/node_modules/
-frontend/dist/
+legacy-fastapi-react/backend/.venv/
+legacy-fastapi-react/backend/__pycache__/
+legacy-fastapi-react/backend/app/__pycache__/
+legacy-fastapi-react/backend/*.db
+legacy-fastapi-react/backend/uploads/
+legacy-fastapi-react/frontend/node_modules/
+legacy-fastapi-react/frontend/dist/
 
 .env
 *.log
