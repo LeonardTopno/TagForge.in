@@ -2,11 +2,14 @@
 deployment:
   tasks:
     - export DEPLOYPATH=/home4/tagforge/public_html/
-    - /bin/cp -R assets $DEPLOYPATH
-    - /bin/cp -R includes $DEPLOYPATH
-    - /bin/cp -R scripts $DEPLOYPATH
-    - /bin/cp .htaccess $DEPLOYPATH
-    - /bin/cp admin.php $DEPLOYPATH
-    - /bin/cp api.php $DEPLOYPATH
-    - /bin/cp app.php $DEPLOYPATH
-    - /bin/cp index.php $DEPLOYPATH
+    - /bin/mkdir -p $DEPLOYPATH/assets $DEPLOYPATH/includes $DEPLOYPATH/scripts $DEPLOYPATH/assets/img $DEPLOYPATH/assets/css $DEPLOYPATH/assets/js
+    - /bin/cp -RF assets/. $DEPLOYPATH/assets/
+    - /bin/cp -RF includes/. $DEPLOYPATH/includes/
+    - /bin/cp -RF scripts/. $DEPLOYPATH/scripts/
+    - /bin/cp -f .htaccess $DEPLOYPATH
+    - /bin/cp -f admin.php $DEPLOYPATH
+    - /bin/cp -f api.php $DEPLOYPATH
+    - /bin/cp -f app.php $DEPLOYPATH
+    - /bin/cp -f index.php $DEPLOYPATH
+    - /bin/cp -f assets/img/favicon.ico $DEPLOYPATH/favicon.ico
+    - /bin/cp -f assets/img/favicon.png $DEPLOYPATH/favicon.png
