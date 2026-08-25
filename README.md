@@ -27,7 +27,10 @@ The previous FastAPI + React + PostgreSQL/SQLite stack is kept in [`legacy-fasta
 | Admin portal | https://admin.tagforge.in | `admin.php` |
 | API | https://api.tagforge.in | `api.php` |
 
-Point all hostnames at the **same document root**. Host routing lives in `.htaccess` + `includes/hosts.php`. Full DNS/cPanel steps: [`docs/domains.html`](docs/domains.html).
+Point all hostnames at the **same document root**. Host routing lives in `.htaccess` + `includes/hosts.php`.
+
+- Full deploy guide: [`docs/deployment.html`](docs/deployment.html)
+- DNS / host map: [`docs/domains.html`](docs/domains.html)
 
 ## Stack
 
