@@ -2,14 +2,16 @@
 
 function app_base_url()
 {
+    $shop = url_for_role('shop');
+    if ($shop !== '') {
+        return $shop;
+    }
     $configured = trim((string) app_config('app_url', ''));
     if ($configured !== '') {
         return rtrim($configured, '/');
     }
 
-    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-        || (isset($_SERVER['SERVER_PORT']) && (string) $_SERVER['SERVER_PORT'] === '443');
-    $scheme = $https ? 'https' : 'http';
+    $scheme = request_is_https() ? 'https' : 'http';
     $host = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost';
 
     $script = isset($_SERVER['SCRIPT_NAME']) ? str_replace('\\', '/', $_SERVER['SCRIPT_NAME']) : '/index.php';
@@ -23,7 +25,7 @@ function app_base_url()
 
 function password_reset_url($token)
 {
-    return app_base_url() . '/index.php?reset=' . rawurlencode($token);
+    return app_base_url() . '/?reset=' . rawurlencode($token);
 }
 
 function send_app_mail($to, $subject, $bodyText)

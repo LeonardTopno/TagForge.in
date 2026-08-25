@@ -11,18 +11,23 @@ if (!is_file($configFile)) {
 
 $GLOBALS['APP_CONFIG'] = require $configFile;
 
+require_once __DIR__ . '/hosts.php';
+
 if (session_status() !== PHP_SESSION_ACTIVE) {
-    $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+    $secure = request_is_https();
+    $cookieDomain = session_cookie_domain();
+    // Sibling subdomains (tagforge.in / api.tagforge.in) are same-site, so Lax is enough.
     if (PHP_VERSION_ID >= 70300) {
         session_set_cookie_params(array(
             'lifetime' => 60 * 60 * 12,
             'path' => '/',
+            'domain' => $cookieDomain !== '' ? $cookieDomain : '',
             'secure' => $secure,
             'httponly' => true,
             'samesite' => 'Lax',
         ));
     } else {
-        session_set_cookie_params(60 * 60 * 12, '/', '', $secure, true);
+        session_set_cookie_params(60 * 60 * 12, '/; samesite=Lax', $cookieDomain, $secure, true);
     }
     session_name('tagprinter');
     session_start();

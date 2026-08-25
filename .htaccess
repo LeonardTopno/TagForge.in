@@ -2,10 +2,51 @@ DirectoryIndex index.php install.php
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
+
+  # Protect private paths
   RewriteRule ^includes/ - [F,L]
   RewriteRule ^legacy-fastapi-react/ - [F,L]
   RewriteRule ^sql/ - [F,L]
+  RewriteRule ^scripts/ - [F,L]
   RewriteRule ^uploads/mail_outbox/ - [F,L]
+
+  # Force HTTPS on production hosts
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP_HOST} (^|\.)tagforge\.in$ [NC]
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+  # www → apex shop
+  RewriteCond %{HTTP_HOST} ^www\.tagforge\.in$ [NC]
+  RewriteRule ^(.*)$ https://tagforge.in/$1 [R=301,L]
+
+  # api.tagforge.in → API front controller
+  RewriteCond %{HTTP_HOST} ^api\.tagforge\.in$ [NC]
+  RewriteCond %{REQUEST_URI} !^/api\.php$ [NC]
+  RewriteCond %{REQUEST_URI} !^/assets/ [NC]
+  RewriteCond %{REQUEST_URI} !^/uploads/ [NC]
+  RewriteRule ^ api.php [L,QSA]
+
+  # admin.tagforge.in → admin portal
+  RewriteCond %{HTTP_HOST} ^admin\.tagforge\.in$ [NC]
+  RewriteRule ^$ admin.php [L]
+  RewriteCond %{HTTP_HOST} ^admin\.tagforge\.in$ [NC]
+  RewriteRule ^index\.php$ https://admin.tagforge.in/ [R=301,L]
+  RewriteCond %{HTTP_HOST} ^admin\.tagforge\.in$ [NC]
+  RewriteRule ^app\.php$ https://app.tagforge.in/ [R=301,L]
+
+  # app.tagforge.in → mobile web entry
+  RewriteCond %{HTTP_HOST} ^app\.tagforge\.in$ [NC]
+  RewriteRule ^$ app.php [L]
+  RewriteCond %{HTTP_HOST} ^app\.tagforge\.in$ [NC]
+  RewriteRule ^index\.php$ https://app.tagforge.in/ [R=301,L]
+  RewriteCond %{HTTP_HOST} ^app\.tagforge\.in$ [NC]
+  RewriteRule ^admin\.php$ https://admin.tagforge.in/ [R=301,L]
+
+  # tagforge.in shop: send admin/app entry points to their hosts
+  RewriteCond %{HTTP_HOST} ^(www\.)?tagforge\.in$ [NC]
+  RewriteRule ^admin\.php$ https://admin.tagforge.in/ [R=301,L]
+  RewriteCond %{HTTP_HOST} ^(www\.)?tagforge\.in$ [NC]
+  RewriteRule ^app\.php$ https://app.tagforge.in/ [R=301,L]
 </IfModule>
 
 <FilesMatch "\.(sql|md|json)$">
