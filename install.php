@@ -131,27 +131,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['install'])) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Install TagForge</title>
+  <link rel="icon" href="assets/img/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" href="assets/img/favicon.png" sizes="32x32">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body { background: #20313f; min-height: 100vh; }
     .install-card { max-width: 760px; }
-    .brand-mark {
-      width: 42px; height: 42px; border-radius: 8px; background: #f5c451;
-      display: inline-flex; align-items: center; justify-content: center; font-weight: 800; color: #173042;
-    }
+    .brand-lockup { display: block; width: min(100%, 320px); height: auto; margin-bottom: 8px; }
   </style>
 </head>
 <body class="d-flex align-items-center py-5">
   <div class="container">
     <div class="card shadow install-card mx-auto">
       <div class="card-body p-4 p-md-5">
-        <div class="d-flex gap-3 align-items-start mb-4">
-          <span class="brand-mark">TF</span>
-          <div>
-            <h1 class="h3 mb-1">TagForge</h1>
-            <p class="text-secondary mb-0"><strong>Print tags. Run your shop.</strong></p>
-            <p class="text-secondary mb-0 mt-1">PHP, MySQL, HTML, CSS, JavaScript, and Bootstrap installer for shared hosting.</p>
-          </div>
+        <div class="mb-4">
+          <img class="brand-lockup" src="assets/img/logo.png" alt="TagForge.in">
+          <p class="text-secondary mb-0 mt-1">PHP, MySQL, HTML, CSS, JavaScript, and Bootstrap installer for shared hosting.</p>
         </div>
 
         <?php if ($success): ?>
