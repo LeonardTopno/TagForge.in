@@ -46,12 +46,8 @@
   function brandHeading(supportText) {
     return (
       '<div class="auth-heading">' +
-        '<span class="brand-mark">TF</span>' +
-        '<div>' +
-          '<h1>' + escapeHtml(brandName) + '</h1>' +
-          '<p class="brand-tagline">' + escapeHtml(brandTagline) + '</p>' +
-          (supportText ? '<p class="auth-support">' + escapeHtml(supportText) + '</p>' : '') +
-        '</div>' +
+        '<img class="brand-lockup" src="assets/img/logo.png" alt="' + escapeHtml(brandName) + '">' +
+        (supportText ? '<p class="auth-support">' + escapeHtml(supportText) + '</p>' : '') +
       '</div>'
     );
   }
@@ -484,7 +480,7 @@
     const shop = state.shop;
     const logo = shop.logo_url
       ? '<img class="brand-mark brand-logo" src="' + escapeHtml(shop.logo_url) + '" alt="">'
-      : '<span class="brand-mark">TF</span>';
+      : '<img class="brand-mark brand-mark-img" src="assets/img/mark.png" alt="">';
     const settingsSubnav = state.view === 'settings'
       ? '<div class="subnav">' +
           '<button type="button" class="' + (state.settingsSection === 'shop' ? 'active' : '') + '" data-action="go" data-view="settings" data-section="shop"><i class="bi bi-building"></i> Shop Settings</button>' +

@@ -259,8 +259,20 @@ textarea {
   object-fit: cover;
 }
 
+.brand-mark-img {
+  background: transparent;
+  object-fit: contain;
+  padding: 0;
+}
+
 .brand-logo {
   background: #ffffff;
+}
+
+.brand-lockup {
+  display: block;
+  width: min(100%, 360px);
+  height: auto;
 }
 
 nav {
@@ -852,6 +864,12 @@ th {
 .auth-heading {
   align-items: flex-start;
   margin-bottom: 24px;
+  display: grid;
+  gap: 12px;
+}
+
+.auth-heading .brand-lockup {
+  margin: 0;
 }
 
 .auth-heading h1 {
@@ -882,6 +900,11 @@ th {
 
 .auth-layout .auth-support {
   color: #b8c4ce;
+}
+
+.auth-heading .auth-support {
+  color: #718096;
+  margin-top: 0;
 }
 
 .error-banner {
