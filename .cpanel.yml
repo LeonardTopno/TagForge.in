@@ -10,4 +10,3 @@ deployment:
     - /bin/cp api.php $DEPLOYPATH
     - /bin/cp app.php $DEPLOYPATH
     - /bin/cp index.php $DEPLOYPATH
-    - /bin/cp install.php $DEPLOYPATH
