@@ -5,6 +5,7 @@ DirectoryIndex index.php install.php
   RewriteRule ^includes/ - [F,L]
   RewriteRule ^legacy-fastapi-react/ - [F,L]
   RewriteRule ^sql/ - [F,L]
+  RewriteRule ^uploads/mail_outbox/ - [F,L]
 </IfModule>
 
 <FilesMatch "\.(sql|md|json)$">

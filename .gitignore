@@ -3,6 +3,8 @@
 includes/config.php
 uploads/logos/*
 !uploads/logos/.gitkeep
+uploads/mail_outbox/*
+!uploads/mail_outbox/.gitkeep
 
 legacy-fastapi-react/backend/.venv/
 legacy-fastapi-react/backend/__pycache__/

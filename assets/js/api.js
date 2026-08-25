@@ -1,3 +1,11 @@
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 function apiRequest(route, options) {
   options = options || {};
   const headers = new Headers(options.headers || {});
@@ -45,6 +53,12 @@ const api = {
   },
   login: function (payload) {
     return apiRequest('auth/login', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  forgotPassword: function (payload) {
+    return apiRequest('auth/forgot-password', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  resetPassword: function (payload) {
+    return apiRequest('auth/reset-password', { method: 'POST', body: JSON.stringify(payload) });
   },
   logout: function () {
     return apiRequest('auth/logout', { method: 'POST', body: JSON.stringify({}) });
@@ -96,11 +110,14 @@ const api = {
   billingLedger: function () {
     return apiRequest('billing/ledger');
   },
-  createPurchase: function (planId) {
-    return apiRequest('billing/purchases', { method: 'POST', body: JSON.stringify({ plan_id: planId }) });
+  createPurchase: function (planId, months) {
+    return apiRequest('billing/purchases', {
+      method: 'POST',
+      body: JSON.stringify({ plan_id: planId, months: months || 1 }),
+    });
   },
-  confirmPurchase: function (purchaseId) {
-    return apiRequest('billing/purchases/confirm', { method: 'POST', body: JSON.stringify({ id: purchaseId }) });
+  confirmPurchase: function (payload) {
+    return apiRequest('billing/purchases/confirm', { method: 'POST', body: JSON.stringify(payload) });
   },
   adminPlans: function () {
     return apiRequest('admin/plans');

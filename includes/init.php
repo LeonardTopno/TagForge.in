@@ -31,6 +31,10 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/schema.php';
 require_once __DIR__ . '/helpers.php';
+require_once __DIR__ . '/mail.php';
+require_once __DIR__ . '/razorpay.php';
 
 csrf_token();
 ensure_upload_dirs();
+ensure_password_reset_schema();
+sync_billing_plans();

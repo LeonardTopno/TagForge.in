@@ -159,12 +159,19 @@ function is_unlimited_active($shop)
 
 function billing_summary($shop)
 {
+    ensure_credits_are_current($shop);
+    $freeDays = (int) app_config('free_registration_validity_days', 2);
+    $monthlyPrice = (int) app_config('monthly_plan_price_inr', 599);
     return array(
         'tag_credit_balance' => (int) $shop['tag_credit_balance'],
         'credits_expire_at' => as_iso($shop['credits_expire_at']),
         'unlimited_until' => as_iso($shop['unlimited_until']),
         'is_unlimited_active' => is_unlimited_active($shop),
-        'tag_price_inr' => (int) app_config('tag_price_inr', 2),
+        'tag_price_inr' => (int) app_config('tag_price_inr', 0),
+        'free_registration_credits' => (int) app_config('free_registration_credits', 20),
+        'free_registration_validity_days' => $freeDays,
+        'monthly_plan_price_inr' => $monthlyPrice,
+        'needs_subscription' => !is_unlimited_active($shop) && (int) $shop['tag_credit_balance'] <= 0,
     );
 }
 
@@ -258,6 +265,10 @@ function ledger_to_array($entry)
 
 function purchase_to_array($purchase)
 {
+    $months = 1;
+    if (!empty($purchase['notes']) && preg_match('/months=(\d+)/', $purchase['notes'], $match)) {
+        $months = max(1, (int) $match[1]);
+    }
     return array(
         'id' => (int) $purchase['id'],
         'shop_id' => (int) $purchase['shop_id'],
@@ -265,6 +276,7 @@ function purchase_to_array($purchase)
         'amount_inr' => (int) $purchase['amount_inr'],
         'tag_credits' => (int) $purchase['tag_credits'],
         'validity_days' => (int) $purchase['validity_days'],
+        'months' => $months,
         'is_unlimited' => (bool) $purchase['is_unlimited'],
         'status' => $purchase['status'],
         'razorpay_order_id' => $purchase['razorpay_order_id'],
@@ -327,23 +339,51 @@ function charge_tag_credits(&$shop, $credits, $description, $tagId = null)
     }
     ensure_credits_are_current($shop);
     if ((int) $shop['tag_credit_balance'] < $credits) {
-        json_error(402, 'Not enough tag credits. Required ' . $credits . ', available ' . $shop['tag_credit_balance'] . '.');
+        json_error(
+            402,
+            'Free tags used up or expired. Buy the Monthly Unlimited plan (Rs. 599/month) from Credits to continue.'
+        );
     }
     $shop['tag_credit_balance'] = (int) $shop['tag_credit_balance'] - $credits;
     db_exec('UPDATE shops SET tag_credit_balance = ? WHERE id = ?', array($shop['tag_credit_balance'], $shop['id']));
     add_ledger_entry($shop['id'], 'debit', $credits, $shop['tag_credit_balance'], $description, $tagId, null);
 }
 
+function months_to_validity_days($months)
+{
+    $months = max(1, (int) $months);
+    $start = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+    $end = $start->modify('+' . $months . ' months');
+    $days = (int) $start->diff($end)->days;
+    return max(1, $days);
+}
+
 function grant_purchase_to_shop(&$shop, $purchase)
 {
-    $paidUntil = gmdate('Y-m-d H:i:s', time() + ((int) $purchase['validity_days'] * 86400));
+    $days = max(1, (int) $purchase['validity_days']);
     if (!empty($purchase['is_unlimited'])) {
-        $existing = !empty($shop['unlimited_until']) ? $shop['unlimited_until'] : $paidUntil;
-        $shop['unlimited_until'] = ($existing > $paidUntil) ? $existing : $paidUntil;
+        $baseTs = time();
+        if (!empty($shop['unlimited_until'])) {
+            $existingTs = strtotime($shop['unlimited_until'] . ' UTC');
+            if ($existingTs !== false && $existingTs > $baseTs) {
+                $baseTs = $existingTs;
+            }
+        }
+        $shop['unlimited_until'] = gmdate('Y-m-d H:i:s', $baseTs + ($days * 86400));
         db_exec('UPDATE shops SET unlimited_until = ? WHERE id = ?', array($shop['unlimited_until'], $shop['id']));
+        add_ledger_entry(
+            $shop['id'],
+            'credit',
+            0,
+            (int) $shop['tag_credit_balance'],
+            'Unlimited plan activated until ' . $shop['unlimited_until'] . ' UTC',
+            null,
+            $purchase['id']
+        );
         return;
     }
     ensure_credits_are_current($shop);
+    $paidUntil = gmdate('Y-m-d H:i:s', time() + ($days * 86400));
     $shop['tag_credit_balance'] = (int) $shop['tag_credit_balance'] + (int) $purchase['tag_credits'];
     $existingExpiry = !empty($shop['credits_expire_at']) ? $shop['credits_expire_at'] : $paidUntil;
     $shop['credits_expire_at'] = ($existingExpiry > $paidUntil) ? $existingExpiry : $paidUntil;

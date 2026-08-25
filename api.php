@@ -39,6 +39,12 @@ function dispatch_api($method, $route)
     if ($route === 'auth/login' && $method === 'POST') {
         handle_login();
     }
+    if ($route === 'auth/forgot-password' && $method === 'POST') {
+        handle_forgot_password();
+    }
+    if ($route === 'auth/reset-password' && $method === 'POST') {
+        handle_reset_password();
+    }
     if ($route === 'auth/logout' && $method === 'POST') {
         $_SESSION = array();
         if (ini_get('session.use_cookies')) {
@@ -156,13 +162,15 @@ function handle_register()
         json_error(409, 'Email is already registered');
     }
 
-    $credits = (int) app_config('free_registration_credits', 15);
+    $credits = (int) app_config('free_registration_credits', 20);
+    $freeDays = max(1, (int) app_config('free_registration_validity_days', 2));
+    $creditsExpireAt = gmdate('Y-m-d H:i:s', time() + ($freeDays * 86400));
     $pdo = db();
     $pdo->beginTransaction();
     try {
         db_exec(
-            'INSERT INTO shops (name, short_name, tag_credit_balance) VALUES (?, ?, ?)',
-            array($shopName, $shortName, $credits)
+            'INSERT INTO shops (name, short_name, tag_credit_balance, credits_expire_at) VALUES (?, ?, ?, ?)',
+            array($shopName, $shortName, $credits, $creditsExpireAt)
         );
         $shopId = (int) $pdo->lastInsertId();
         db_exec(
@@ -171,7 +179,13 @@ function handle_register()
         );
         $userId = (int) $pdo->lastInsertId();
         seed_items_for_shop($pdo, $shopId);
-        add_ledger_entry($shopId, 'credit', $credits, $credits, 'Free registration credits');
+        add_ledger_entry(
+            $shopId,
+            'credit',
+            $credits,
+            $credits,
+            'Free starter pack: ' . $credits . ' tags valid for ' . $freeDays . ' days'
+        );
         $pdo->commit();
     } catch (Exception $e) {
         $pdo->rollBack();
@@ -198,6 +212,103 @@ function handle_login()
     }
     login_user($user);
     json_ok(auth_payload($user, get_shop($user['shop_id'])));
+}
+
+function handle_forgot_password()
+{
+    ensure_password_reset_schema();
+    $data = request_json();
+    $email = require_email($data);
+    $generic = 'If that email is registered, a password reset link has been sent.';
+    $user = db_one('SELECT * FROM users WHERE email = ? AND is_active = 1', array($email));
+
+    $response = array('ok' => true, 'detail' => $generic);
+    if (!$user) {
+        json_ok($response);
+    }
+
+    $token = bin2hex(function_exists('random_bytes') ? random_bytes(32) : openssl_random_pseudo_bytes(32));
+    $tokenHash = hash('sha256', $token);
+    $expiresAt = gmdate('Y-m-d H:i:s', time() + 60 * 60);
+
+    db_exec('UPDATE password_reset_tokens SET used_at = ? WHERE user_id = ? AND used_at IS NULL', array(now_utc(), (int) $user['id']));
+    db_exec(
+        'INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?)',
+        array((int) $user['id'], $tokenHash, $expiresAt)
+    );
+
+    $resetUrl = password_reset_url($token);
+    $appName = app_config('app_name', 'Jewellery Tag Printer');
+    $body = "Hello {$user['name']},\n\n"
+        . "We received a request to reset your password for {$appName}.\n\n"
+        . "Open this link to choose a new password (valid for 1 hour):\n"
+        . "{$resetUrl}\n\n"
+        . "If you did not request this, you can ignore this email.\n\n"
+        . "— {$appName}\n";
+
+    send_app_mail($user['email'], $appName . ' password reset', $body);
+
+    if (app_config('mail_debug', false)) {
+        $response['reset_url'] = $resetUrl;
+        $response['detail'] = $generic . ' Local testing: open the reset link below.';
+    }
+
+    json_ok($response);
+}
+
+function handle_reset_password()
+{
+    ensure_password_reset_schema();
+    $data = request_json();
+    $token = isset($data['token']) ? trim((string) $data['token']) : '';
+    $password = require_string($data, 'password', 8, 128, 'password');
+
+    if ($token === '' || !preg_match('/^[a-f0-9]{64}$/', $token)) {
+        json_error(422, 'Invalid or expired reset link. Request a new one.');
+    }
+
+    $tokenHash = hash('sha256', $token);
+    $row = db_one(
+        'SELECT * FROM password_reset_tokens WHERE token_hash = ? AND used_at IS NULL LIMIT 1',
+        array($tokenHash)
+    );
+    if (!$row) {
+        json_error(422, 'Invalid or expired reset link. Request a new one.');
+    }
+    if (strtotime($row['expires_at'] . ' UTC') < time()) {
+        json_error(422, 'This reset link has expired. Request a new one.');
+    }
+
+    $user = db_one('SELECT * FROM users WHERE id = ? AND is_active = 1', array((int) $row['user_id']));
+    if (!$user) {
+        json_error(422, 'Invalid or expired reset link. Request a new one.');
+    }
+
+    $pdo = db();
+    $pdo->beginTransaction();
+    try {
+        db_exec(
+            'UPDATE users SET password_hash = ? WHERE id = ?',
+            array(password_hash($password, PASSWORD_DEFAULT), (int) $user['id'])
+        );
+        db_exec(
+            'UPDATE password_reset_tokens SET used_at = ? WHERE id = ?',
+            array(now_utc(), (int) $row['id'])
+        );
+        db_exec(
+            'UPDATE password_reset_tokens SET used_at = ? WHERE user_id = ? AND used_at IS NULL AND id <> ?',
+            array(now_utc(), (int) $user['id'], (int) $row['id'])
+        );
+        $pdo->commit();
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        throw $e;
+    }
+
+    json_ok(array(
+        'ok' => true,
+        'detail' => 'Password updated. You can sign in with your new password.',
+    ));
 }
 
 function handle_dashboard($user)
@@ -459,28 +570,79 @@ function handle_create_purchase($user)
 {
     $data = request_json();
     $planId = require_int($data, 'plan_id', 1, 1000000);
+    $months = require_int($data, 'months', 1, 24);
     $plan = db_one('SELECT * FROM billing_plans WHERE id = ? AND is_active = 1', array($planId));
     if (!$plan) {
         json_error(404, 'Plan not found');
     }
+    if (empty($plan['is_unlimited'])) {
+        json_error(422, 'Only the Monthly Unlimited plan can be purchased.');
+    }
+
+    $unitPrice = (int) app_config('monthly_plan_price_inr', (int) $plan['price_inr']);
+    if ($unitPrice < 1) {
+        $unitPrice = (int) $plan['price_inr'];
+    }
+    $amountInr = $unitPrice * $months;
+    $validityDays = months_to_validity_days($months);
+    $notes = 'months=' . $months . '; unit_price=' . $unitPrice;
+
+    $orderId = null;
+    $checkoutMode = 'local';
+    if (razorpay_configured()) {
+        try {
+            $order = razorpay_create_order(
+                $amountInr,
+                'shop' . $user['shop_id'] . '_p' . time(),
+                array(
+                    'shop_id' => (string) $user['shop_id'],
+                    'plan_id' => (string) $plan['id'],
+                    'months' => (string) $months,
+                )
+            );
+            $orderId = isset($order['id']) ? $order['id'] : null;
+            $checkoutMode = 'razorpay';
+        } catch (Exception $e) {
+            json_error(502, $e->getMessage());
+        }
+    } else {
+        $orderId = 'local_order_' . $user['shop_id'] . '_' . time();
+        $notes .= '; local_checkout=1';
+    }
+
     db_exec(
         'INSERT INTO plan_purchases (shop_id, plan_id, amount_inr, tag_credits, validity_days, is_unlimited, razorpay_order_id, notes)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         array(
-            $user['shop_id'], $plan['id'], $plan['price_inr'], $plan['tag_credits'], $plan['validity_days'],
-            $plan['is_unlimited'] ? 1 : 0,
-            'local_order_' . $user['shop_id'] . '_' . time(),
-            'Local test order. Replace with Razorpay Orders API in production.',
+            $user['shop_id'],
+            $plan['id'],
+            $amountInr,
+            0,
+            $validityDays,
+            1,
+            $orderId,
+            $notes,
         )
     );
     $purchaseId = (int) db()->lastInsertId();
-    json_ok(purchase_to_array(db_one('SELECT * FROM plan_purchases WHERE id = ?', array($purchaseId))), 201);
+    $purchase = db_one('SELECT * FROM plan_purchases WHERE id = ?', array($purchaseId));
+    $payload = purchase_to_array($purchase);
+    $payload['checkout_mode'] = $checkoutMode;
+    $payload['razorpay_key_id'] = $checkoutMode === 'razorpay' ? app_config('razorpay_key_id', '') : null;
+    $payload['amount_paise'] = $amountInr * 100;
+    $payload['currency'] = 'INR';
+    $payload['unit_price_inr'] = $unitPrice;
+    json_ok($payload, 201);
 }
 
 function handle_confirm_purchase($user)
 {
     $data = request_json();
     $purchaseId = isset($data['id']) ? (int) $data['id'] : (isset($_GET['id']) ? (int) $_GET['id'] : 0);
+    $paymentId = isset($data['razorpay_payment_id']) ? trim((string) $data['razorpay_payment_id']) : '';
+    $orderId = isset($data['razorpay_order_id']) ? trim((string) $data['razorpay_order_id']) : '';
+    $signature = isset($data['razorpay_signature']) ? trim((string) $data['razorpay_signature']) : '';
+
     $pdo = db();
     $pdo->beginTransaction();
     try {
@@ -493,11 +655,28 @@ function handle_confirm_purchase($user)
             $pdo->commit();
             json_ok(billing_summary($shop));
         }
+
+        $isLocalOrder = strpos((string) $purchase['razorpay_order_id'], 'local_order_') === 0;
+        if (razorpay_configured() && !$isLocalOrder) {
+            if ($orderId === '' || $paymentId === '' || $signature === '') {
+                json_error(422, 'Razorpay payment details are missing.');
+            }
+            if ($orderId !== (string) $purchase['razorpay_order_id']) {
+                json_error(422, 'Razorpay order mismatch.');
+            }
+            if (!razorpay_verify_signature($orderId, $paymentId, $signature)) {
+                json_error(400, 'Invalid Razorpay payment signature.');
+            }
+        } else {
+            $paymentId = $paymentId !== '' ? $paymentId : ('local_payment_' . $purchase['id']);
+        }
+
         db_exec(
             'UPDATE plan_purchases SET status = ?, razorpay_payment_id = ?, paid_at = ? WHERE id = ?',
-            array('paid', 'local_payment_' . $purchase['id'], now_utc(), $purchase['id'])
+            array('paid', $paymentId, now_utc(), $purchase['id'])
         );
         $purchase['status'] = 'paid';
+        $purchase['razorpay_payment_id'] = $paymentId;
         grant_purchase_to_shop($shop, $purchase);
         $pdo->commit();
     } catch (Exception $e) {

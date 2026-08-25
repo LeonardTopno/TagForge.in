@@ -12,34 +12,14 @@ function default_billing_plans()
 {
     return array(
         array(
-            'code' => 'starter',
-            'name' => 'Starter',
-            'description' => '500 tag credits for focused shop usage.',
-            'price_inr' => 1000,
-            'tag_credits' => 500,
-            'validity_days' => 90,
-            'is_unlimited' => 0,
-            'sort_order' => 1,
-        ),
-        array(
-            'code' => 'growth',
-            'name' => 'Growth',
-            'description' => '750 tag credits for higher monthly printing.',
-            'price_inr' => 1500,
-            'tag_credits' => 750,
-            'validity_days' => 90,
-            'is_unlimited' => 0,
-            'sort_order' => 2,
-        ),
-        array(
-            'code' => 'pro',
-            'name' => 'Pro Annual',
-            'description' => 'Unlimited tag printing for one year.',
-            'price_inr' => 10000,
+            'code' => 'monthly',
+            'name' => 'Monthly Unlimited',
+            'description' => 'Unlimited tag creation for Rs. 599 per month. Choose how many months you want to buy.',
+            'price_inr' => 599,
             'tag_credits' => 0,
-            'validity_days' => 365,
+            'validity_days' => 30,
             'is_unlimited' => 1,
-            'sort_order' => 3,
+            'sort_order' => 1,
         ),
     );
 }
@@ -66,7 +46,7 @@ function install_schema(PDO $pdo)
             horizontal_offset_mm DECIMAL(6,2) NOT NULL DEFAULT 0.00,
             vertical_offset_mm DECIMAL(6,2) NOT NULL DEFAULT 0.00,
             show_shop_name TINYINT(1) NOT NULL DEFAULT 1,
-            tag_credit_balance INT NOT NULL DEFAULT 15,
+            tag_credit_balance INT NOT NULL DEFAULT 20,
             credits_expire_at DATETIME DEFAULT NULL,
             unlimited_until DATETIME DEFAULT NULL,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -193,6 +173,19 @@ function install_schema(PDO $pdo)
             CONSTRAINT fk_ledger_tag FOREIGN KEY (jewellery_tag_id) REFERENCES jewellery_tags (id),
             CONSTRAINT fk_ledger_purchase FOREIGN KEY (purchase_id) REFERENCES plan_purchases (id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+        "CREATE TABLE IF NOT EXISTS password_reset_tokens (
+            id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            user_id INT UNSIGNED NOT NULL,
+            token_hash CHAR(64) NOT NULL,
+            expires_at DATETIME NOT NULL,
+            used_at DATETIME DEFAULT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY uq_password_reset_token_hash (token_hash),
+            KEY idx_password_reset_user (user_id),
+            CONSTRAINT fk_password_reset_user FOREIGN KEY (user_id) REFERENCES users (id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     );
 
     foreach ($statements as $sql) {
@@ -202,20 +195,64 @@ function install_schema(PDO $pdo)
     $pdo->exec("SET FOREIGN_KEY_CHECKS = 1");
 }
 
+function ensure_password_reset_schema($pdo = null)
+{
+    $pdo = $pdo ?: db();
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS password_reset_tokens (
+            id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            user_id INT UNSIGNED NOT NULL,
+            token_hash CHAR(64) NOT NULL,
+            expires_at DATETIME NOT NULL,
+            used_at DATETIME DEFAULT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY uq_password_reset_token_hash (token_hash),
+            KEY idx_password_reset_user (user_id),
+            CONSTRAINT fk_password_reset_user FOREIGN KEY (user_id) REFERENCES users (id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+}
+
 function seed_billing_plans(PDO $pdo)
 {
-    $stmt = $pdo->prepare(
-        'INSERT INTO billing_plans (code, name, description, price_inr, tag_credits, validity_days, is_unlimited, sort_order)
-         SELECT ?, ?, ?, ?, ?, ?, ?, ?
-         FROM DUAL
-         WHERE NOT EXISTS (SELECT 1 FROM billing_plans WHERE code = ?)'
-    );
+    sync_billing_plans($pdo);
+}
+
+function sync_billing_plans($pdo = null)
+{
+    $pdo = $pdo ?: db();
+    $activeCodes = array();
     foreach (default_billing_plans() as $plan) {
-        $stmt->execute(array(
-            $plan['code'], $plan['name'], $plan['description'], $plan['price_inr'],
-            $plan['tag_credits'], $plan['validity_days'], $plan['is_unlimited'], $plan['sort_order'],
-            $plan['code'],
-        ));
+        $activeCodes[] = $plan['code'];
+        $existing = $pdo->prepare('SELECT id FROM billing_plans WHERE code = ?');
+        $existing->execute(array($plan['code']));
+        $row = $existing->fetch(PDO::FETCH_ASSOC);
+        if ($row) {
+            $pdo->prepare(
+                'UPDATE billing_plans
+                 SET name = ?, description = ?, price_inr = ?, tag_credits = ?, validity_days = ?,
+                     is_unlimited = ?, is_active = 1, sort_order = ?
+                 WHERE id = ?'
+            )->execute(array(
+                $plan['name'], $plan['description'], $plan['price_inr'], $plan['tag_credits'],
+                $plan['validity_days'], $plan['is_unlimited'], $plan['sort_order'], $row['id'],
+            ));
+        } else {
+            $pdo->prepare(
+                'INSERT INTO billing_plans (code, name, description, price_inr, tag_credits, validity_days, is_unlimited, is_active, sort_order)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)'
+            )->execute(array(
+                $plan['code'], $plan['name'], $plan['description'], $plan['price_inr'],
+                $plan['tag_credits'], $plan['validity_days'], $plan['is_unlimited'], $plan['sort_order'],
+            ));
+        }
+    }
+
+    if ($activeCodes) {
+        $placeholders = implode(',', array_fill(0, count($activeCodes), '?'));
+        $stmt = $pdo->prepare('UPDATE billing_plans SET is_active = 0 WHERE code NOT IN (' . $placeholders . ')');
+        $stmt->execute($activeCodes);
     }
 }
 

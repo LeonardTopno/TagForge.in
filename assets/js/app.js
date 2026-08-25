@@ -22,12 +22,15 @@
     activeTag: null,
     form: Object.assign({}, blankTag),
     itemCatalog: [],
-    authMode: 'register',
+    authMode: 'login',
+    resetToken: '',
+    resetUrl: '',
     error: '',
     success: '',
     busy: false,
     navOpen: false,
     billingMessage: '',
+    purchaseMonths: 1,
     settingsMessage: '',
     itemError: '',
     logoError: '',
@@ -41,6 +44,12 @@
   function formatWeight(value) {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed.toFixed(3) : '0.000';
+  }
+
+  function formatPurity(value) {
+    const purity = String(value || '').trim().replace(/\s*\/\s*/g, '/').toUpperCase();
+    if (!purity) return '—';
+    return 'Purity: ' + purity;
   }
 
   function tagItemLabel(itemName, category) {
@@ -108,6 +117,13 @@
     };
   }
 
+  function tagBrandMark(shop) {
+    if (shop && shop.logo_url) {
+      return '<img class="tag-back-logo" src="' + escapeHtml(shop.logo_url) + '" alt="Shop logo">';
+    }
+    return '<span class="tag-back-number">B&amp;G</span>';
+  }
+
   function printableTagHtml(tag, shop) {
     const style = [
       'width:' + shop.tag_width_mm + 'mm',
@@ -126,11 +142,11 @@
             '</div>' +
           '</div>' +
           '<div class="tag-fold-mark" aria-hidden="true" title="Fold line"></div>' +
-          '<div class="tag-panel tag-panel-right" aria-label="Right panel: item, barcode, tag number">' +
+          '<div class="tag-panel tag-panel-right" aria-label="Right panel: item, purity, shop logo">' +
             '<div class="tag-back">' +
               '<span class="tag-back-item">' + escapeHtml(tagItemLabel(tag.item_name, tag.category).toUpperCase()) + '</span>' +
-              barcodeSvg(tag.tag_number) +
-              '<span class="tag-back-number">' + escapeHtml(tag.tag_number) + '</span>' +
+              '<span class="tag-back-purity">' + escapeHtml(formatPurity(tag.purity)) + '</span>' +
+              tagBrandMark(shop) +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -173,30 +189,68 @@
   }
 
   function renderAuth() {
-    const registerFields = state.authMode === 'register'
-      ? '<label>Shop name<input class="form-control" name="shop_name" value="Bhaskaran Jewellers" required></label>' +
+    const isRegister = state.authMode === 'register';
+    const isForgot = state.authMode === 'forgot';
+    const isReset = state.authMode === 'reset';
+
+    let heading = 'Shop accounts, weight entry, preview and browser printing.';
+    let formFields = '';
+    let submitLabel = 'Sign in';
+    let submitIcon = 'bi-box-arrow-in-right';
+    let secondary = '';
+
+    if (isRegister) {
+      submitLabel = 'Create shop account';
+      submitIcon = 'bi-person-plus';
+      formFields =
+        '<label>Shop name<input class="form-control" name="shop_name" value="Bhaskaran Jewellers" required></label>' +
         '<label>Tag short name<input class="form-control" name="shop_short_name" value="BHJ" required></label>' +
-        '<label>Owner name<input class="form-control" name="owner_name" value="Owner" required></label>'
-      : '';
+        '<label>Owner name<input class="form-control" name="owner_name" value="Owner" required></label>' +
+        '<label>Email<input class="form-control" name="email" type="email" value="owner@example.com" required></label>' +
+        '<label>Password<input class="form-control" name="password" type="password" value="password123" minlength="8" required></label>';
+      secondary = '<button class="link-button" type="button" data-action="toggle-auth">Use an existing account</button>';
+    } else if (isForgot) {
+      heading = 'Enter your account email and we will send a password reset link.';
+      submitLabel = 'Send reset link';
+      submitIcon = 'bi-envelope';
+      formFields = '<label>Email<input class="form-control" name="email" type="email" required></label>';
+      secondary = '<button class="link-button" type="button" data-action="show-login">Back to sign in</button>';
+    } else if (isReset) {
+      heading = 'Choose a new password for your account.';
+      submitLabel = 'Update password';
+      submitIcon = 'bi-key';
+      formFields =
+        '<label>New password<input class="form-control" name="password" type="password" minlength="8" required></label>' +
+        '<label>Confirm password<input class="form-control" name="password_confirm" type="password" minlength="8" required></label>';
+      secondary = '<button class="link-button" type="button" data-action="show-login">Back to sign in</button>';
+    } else {
+      formFields =
+        '<label>Email<input class="form-control" name="email" type="email" required></label>' +
+        '<label>Password<input class="form-control" name="password" type="password" minlength="8" required></label>' +
+        '<div class="auth-links"><button class="link-button" type="button" data-action="show-forgot">Forgot password?</button></div>';
+      secondary =
+        '<button class="link-button" type="button" data-action="toggle-auth">Create a new shop account</button>';
+    }
+
     return (
       '<main class="auth-layout">' +
         '<section class="auth-panel">' +
           '<div class="auth-heading">' +
             '<span class="brand-mark">JT</span>' +
-            '<div><h1>Jewellery Tag Printer</h1><p>Shop accounts, weight entry, preview and browser printing.</p></div>' +
+            '<div><h1>Jewellery Tag Printer</h1><p>' + escapeHtml(heading) + '</p></div>' +
           '</div>' +
           '<form data-action="auth" class="form-grid">' +
-            registerFields +
-            '<label>Email<input class="form-control" name="email" type="email" value="owner@example.com" required></label>' +
-            '<label>Password<input class="form-control" name="password" type="password" value="password123" minlength="8" required></label>' +
+            formFields +
             (state.error ? '<div class="error-banner">' + escapeHtml(state.error) + '</div>' : '') +
-            '<button class="primary-button" ' + (state.busy ? 'disabled' : '') + '><i class="bi bi-person-plus"></i> ' +
-              (state.authMode === 'register' ? 'Create shop account' : 'Sign in') +
+            (state.success ? '<div class="success-banner">' + escapeHtml(state.success) + '</div>' : '') +
+            (state.success && state.resetUrl
+              ? '<p class="auth-reset-link"><a href="' + escapeHtml(state.resetUrl) + '">Open password reset link</a></p>'
+              : '') +
+            '<button class="primary-button" ' + (state.busy ? 'disabled' : '') + '><i class="bi ' + submitIcon + '"></i> ' +
+              submitLabel +
             '</button>' +
           '</form>' +
-          '<button class="link-button" type="button" data-action="toggle-auth">' +
-            (state.authMode === 'register' ? 'Use an existing account' : 'Create a new shop account') +
-          '</button>' +
+          secondary +
         '</section>' +
         companyFooter() +
       '</main>'
@@ -238,6 +292,7 @@
             '</div></div>' +
             '<label>Gross weight<input class="form-control" data-field="gross_weight" step="0.001" type="number" value="' + escapeHtml(state.form.gross_weight) + '"></label>' +
             '<label>Stone weight<input class="form-control" data-field="stone_weight" step="0.001" type="number" value="' + escapeHtml(state.form.stone_weight) + '"></label>' +
+            '<label>Purity<input class="form-control purity-input" data-field="purity" placeholder="22K/916" autocapitalize="characters" spellcheck="false" value="' + escapeHtml(state.form.purity) + '"></label>' +
           '</div>' +
           '<div class="net-box"><span>Net weight</span><strong>' + calculateNet(state.form) + ' g</strong></div>' +
           '<div class="button-row">' +
@@ -275,29 +330,56 @@
 
   function renderBilling() {
     const billing = state.stats && state.stats.billing ? state.stats.billing : null;
-    const plans = state.plans.map(function (plan) {
-      return '<article class="plan-card">' +
-        '<div class="plan-heading"><h2>' + escapeHtml(plan.name) + '</h2>' + (plan.is_unlimited ? '<i class="bi bi-crown"></i>' : '') + '</div>' +
-        '<p>' + escapeHtml(plan.description) + '</p>' +
-        '<div class="plan-price">Rs. ' + Number(plan.price_inr).toLocaleString('en-IN') + '</div>' +
-        '<dl><div><dt>Tags</dt><dd>' + (plan.is_unlimited ? 'Unlimited' : Number(plan.tag_credits).toLocaleString('en-IN')) + '</dd></div>' +
-        '<div><dt>Validity</dt><dd>' + plan.validity_days + ' days</dd></div></dl>' +
-        '<button class="primary-button" type="button" data-action="buy-plan" data-id="' + plan.id + '"><i class="bi bi-currency-rupee"></i> Buy with Razorpay</button>' +
-      '</article>';
+    const monthlyPrice = billing && billing.monthly_plan_price_inr ? Number(billing.monthly_plan_price_inr) : 599;
+    const months = Math.max(1, Math.min(24, Number(state.purchaseMonths) || 1));
+    const total = monthlyPrice * months;
+    const plan = state.plans[0] || null;
+    const unlimitedActive = !!(billing && billing.is_unlimited_active);
+    const freeCredits = billing ? billing.tag_credit_balance : 0;
+    const freeDays = billing ? billing.free_registration_validity_days : 2;
+
+    const statusCard = unlimitedActive
+      ? '<div class="success-banner">Unlimited plan is active until <strong>' + escapeHtml(formatDate(billing.unlimited_until)) + '</strong>.</div>'
+      : (freeCredits > 0
+        ? '<div class="success-banner">Free starter pack: <strong>' + freeCredits + '</strong> tags left' +
+          (billing && billing.credits_expire_at ? ' · valid until <strong>' + escapeHtml(formatDate(billing.credits_expire_at)) + '</strong>' : '') +
+          '.</div>'
+        : '<div class="error-banner">Free tags used up or expired. Purchase Monthly Unlimited to continue creating tags.</div>');
+
+    const monthOptions = [1, 2, 3, 6, 12].map(function (value) {
+      return '<option value="' + value + '"' + (months === value ? ' selected' : '') + '>' + value + (value === 1 ? ' month' : ' months') + '</option>';
     }).join('');
+
+    const planCard = plan
+      ? '<article class="plan-card">' +
+          '<div class="plan-heading"><h2>' + escapeHtml(plan.name) + '</h2><i class="bi bi-crown"></i></div>' +
+          '<p>' + escapeHtml(plan.description) + '</p>' +
+          '<div class="plan-price">Rs. ' + monthlyPrice.toLocaleString('en-IN') + '<small> / month</small></div>' +
+          '<dl><div><dt>Tags</dt><dd>Unlimited</dd></div><div><dt>Billing</dt><dd>Choose months</dd></div></dl>' +
+          '<label>Number of months<select class="form-select" data-field="purchase_months">' + monthOptions + '</select></label>' +
+          '<div class="plan-total">Total payable: <strong>Rs. ' + total.toLocaleString('en-IN') + '</strong> for ' + months + (months === 1 ? ' month' : ' months') + '</div>' +
+          '<button class="primary-button" type="button" data-action="buy-plan" data-id="' + plan.id + '"' + (state.busy ? ' disabled' : '') + '>' +
+            '<i class="bi bi-currency-rupee"></i> Pay with Razorpay' +
+          '</button>' +
+        '</article>'
+      : '<div class="error-banner">No active plan is configured. Contact support.</div>';
+
     const ledger = state.ledger.map(function (entry) {
       return '<tr><td>' + escapeHtml(formatDate(entry.created_at)) + '</td><td>' + escapeHtml(entry.entry_type) + '</td><td>' + entry.credits + '</td><td>' + entry.balance_after + '</td><td>' + escapeHtml(entry.description) + '</td></tr>';
     }).join('');
+
     return (
       '<section class="billing-layout">' +
         '<div class="billing-summary">' +
-          '<div><span>Available credits</span><strong>' + (billing && billing.is_unlimited_active ? 'Unlimited' : (billing ? billing.tag_credit_balance : 0)) + '</strong></div>' +
-          '<div><span>Credit validity</span><strong>' + formatDate(billing && billing.credits_expire_at) + '</strong></div>' +
-          '<div><span>Pro valid until</span><strong>' + formatDate(billing && billing.unlimited_until) + '</strong></div>' +
-          '<div><span>Rate</span><strong>Rs. ' + (billing ? billing.tag_price_inr : 2) + '/tag</strong></div>' +
+          '<div><span>Available tags</span><strong>' + (unlimitedActive ? 'Unlimited' : freeCredits) + '</strong></div>' +
+          '<div><span>Free pack validity</span><strong>' + formatDate(billing && billing.credits_expire_at) + '</strong></div>' +
+          '<div><span>Unlimited until</span><strong>' + formatDate(billing && billing.unlimited_until) + '</strong></div>' +
+          '<div><span>Monthly plan</span><strong>Rs. ' + monthlyPrice.toLocaleString('en-IN') + '</strong></div>' +
         '</div>' +
+        statusCard +
+        '<p class="settings-help">New shops get <strong>20 free tags for ' + freeDays + ' days</strong>. After that, buy Monthly Unlimited at <strong>Rs. 599/month</strong> and choose how many months to purchase.</p>' +
         (state.billingMessage ? '<div class="success-banner">' + escapeHtml(state.billingMessage) + '</div>' : '') +
-        '<div class="plan-grid">' + plans + '</div>' +
+        '<div class="plan-grid single-plan">' + planCard + '</div>' +
         '<section class="table-panel"><div class="panel-title"><h2>Credit Ledger</h2><span>' + state.ledger.length + ' entries</span></div>' +
           '<table class="table"><thead><tr><th>Date</th><th>Type</th><th>Credits</th><th>Balance</th><th>Description</th></tr></thead><tbody>' + ledger + '</tbody></table>' +
         '</section>' +
@@ -405,8 +487,8 @@
 
     return (
       '<div class="app-shell' + (state.navOpen ? ' nav-open' : '') + '">' +
-        '<button type="button" class="nav-toggle" data-action="toggle-nav" aria-expanded="' + state.navOpen + '">' +
-          '<i class="bi ' + (state.navOpen ? 'bi-x-lg' : 'bi-list') + '"></i><span>' + (state.navOpen ? 'Close menu' : 'Open menu') + '</span>' +
+        '<button type="button" class="nav-toggle" data-action="toggle-nav" aria-expanded="' + state.navOpen + '" aria-controls="shop-sidebar">' +
+          '<i class="bi ' + (state.navOpen ? 'bi-x-lg' : 'bi-list') + '"></i><span>' + (state.navOpen ? 'Close menu' : 'Menu') + '</span>' +
         '</button>' +
         (state.navOpen ? '<button type="button" class="nav-backdrop" data-action="toggle-nav" aria-label="Close menu"></button>' : '') +
         '<div class="app-body">' +
@@ -495,6 +577,92 @@
     }
   }
 
+  function loadRazorpayScript() {
+    return new Promise(function (resolve, reject) {
+      if (window.Razorpay) {
+        resolve();
+        return;
+      }
+      const existing = document.querySelector('script[data-razorpay="1"]');
+      if (existing) {
+        existing.addEventListener('load', function () { resolve(); });
+        existing.addEventListener('error', function () { reject(new Error('Could not load Razorpay Checkout')); });
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.setAttribute('data-razorpay', '1');
+      script.onload = function () { resolve(); };
+      script.onerror = function () { reject(new Error('Could not load Razorpay Checkout')); };
+      document.head.appendChild(script);
+    });
+  }
+
+  function finalizePurchase(purchase, paymentPayload) {
+    const payload = Object.assign({ id: purchase.id }, paymentPayload || {});
+    return api.confirmPurchase(payload).then(function () {
+      return refreshData();
+    }).then(function () {
+      state.busy = false;
+      state.billingMessage = purchase.checkout_mode === 'razorpay'
+        ? 'Payment successful. Unlimited plan is now active.'
+        : 'Plan activated (local test mode — add Razorpay keys in config for live checkout).';
+      render();
+    });
+  }
+
+  function openRazorpayCheckout(purchase) {
+    return loadRazorpayScript().then(function () {
+      return new Promise(function (resolve, reject) {
+        const options = {
+          key: purchase.razorpay_key_id,
+          amount: purchase.amount_paise,
+          currency: purchase.currency || 'INR',
+          name: 'Jewellery Tag Printer',
+          description: 'Monthly Unlimited · ' + purchase.months + (purchase.months === 1 ? ' month' : ' months'),
+          order_id: purchase.razorpay_order_id,
+          handler: function (response) {
+            resolve({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+          },
+          modal: {
+            ondismiss: function () {
+              reject(new Error('Payment cancelled'));
+            },
+          },
+          theme: { color: '#0f766e' },
+        };
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function (response) {
+          const detail = response && response.error && response.error.description
+            ? response.error.description
+            : 'Payment failed';
+          reject(new Error(detail));
+        });
+        rzp.open();
+      });
+    });
+  }
+
+  function startPlanPurchase(planId, months) {
+    api.createPurchase(planId, months).then(function (purchase) {
+      if (purchase.checkout_mode === 'razorpay') {
+        return openRazorpayCheckout(purchase).then(function (payment) {
+          return finalizePurchase(purchase, payment);
+        });
+      }
+      return finalizePurchase(purchase, {});
+    }).catch(function (err) {
+      state.busy = false;
+      state.error = err.message || 'Could not complete purchase';
+      render();
+    });
+  }
+
   function saveSettingsFrom(form) {
     const payload = currentSettingsPayload(form);
     api.updateSettings(payload).then(function (updated) {
@@ -514,6 +682,26 @@
     if (action === 'toggle-auth') {
       state.authMode = state.authMode === 'register' ? 'login' : 'register';
       state.error = '';
+      state.success = '';
+      state.resetUrl = '';
+      render();
+    }
+    if (action === 'show-forgot') {
+      state.authMode = 'forgot';
+      state.error = '';
+      state.success = '';
+      state.resetUrl = '';
+      render();
+    }
+    if (action === 'show-login') {
+      state.authMode = 'login';
+      state.error = '';
+      state.success = '';
+      state.resetUrl = '';
+      state.resetToken = '';
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState({}, '', window.location.pathname);
+      }
       render();
     }
     if (action === 'toggle-nav') {
@@ -549,18 +737,12 @@
     }
     if (action === 'buy-plan') {
       const planId = Number(button.getAttribute('data-id'));
-      button.disabled = true;
-      api.createPurchase(planId).then(function (purchase) {
-        return api.confirmPurchase(purchase.id);
-      }).then(function () {
-        return refreshData();
-      }).then(function () {
-        state.billingMessage = 'Plan activated for local testing. Razorpay capture will replace this confirmation step in production.';
-        render();
-      }).catch(function (err) {
-        state.error = err.message;
-        render();
-      });
+      const months = Math.max(1, Math.min(24, Number(state.purchaseMonths) || 1));
+      state.busy = true;
+      state.error = '';
+      state.billingMessage = '';
+      render();
+      startPlanPurchase(planId, months);
     }
     if (action === 'pick-logo') {
       const input = document.getElementById('logo-input');
@@ -637,7 +819,57 @@
       const data = new FormData(form);
       state.busy = true;
       state.error = '';
+      state.success = '';
+      state.resetUrl = '';
       render();
+
+      if (state.authMode === 'forgot') {
+        api.forgotPassword({
+          email: String(data.get('email') || ''),
+        }).then(function (result) {
+          state.busy = false;
+          state.success = (result && result.detail) || 'If that email is registered, a password reset link has been sent.';
+          if (result && result.reset_url) {
+            state.resetUrl = result.reset_url;
+          }
+          render();
+        }).catch(function (err) {
+          state.busy = false;
+          state.error = err.message || 'Could not send reset link';
+          render();
+        });
+        return;
+      }
+
+      if (state.authMode === 'reset') {
+        const password = String(data.get('password') || '');
+        const confirm = String(data.get('password_confirm') || '');
+        if (password !== confirm) {
+          state.busy = false;
+          state.error = 'Passwords do not match';
+          render();
+          return;
+        }
+        api.resetPassword({
+          token: state.resetToken,
+          password: password,
+        }).then(function (result) {
+          state.busy = false;
+          state.authMode = 'login';
+          state.resetToken = '';
+          state.success = (result && result.detail) || 'Password updated. You can sign in now.';
+          if (window.history && window.history.replaceState) {
+            window.history.replaceState({}, '', window.location.pathname);
+          }
+          render();
+        }).catch(function (err) {
+          state.busy = false;
+          state.error = err.message || 'Could not reset password';
+          render();
+        });
+        return;
+      }
+
       const request = state.authMode === 'register'
         ? api.register({
             shop_name: String(data.get('shop_name') || ''),
@@ -669,12 +901,24 @@
 
   root.addEventListener('input', function (event) {
     const field = event.target.getAttribute('data-field');
+    if (field === 'purchase_months') {
+      state.purchaseMonths = Math.max(1, Math.min(24, Number(event.target.value) || 1));
+      render();
+      return;
+    }
     if (field) {
       state.activeTag = null;
-      state.form[field] = event.target.value;
-      if (field === 'gross_weight' || field === 'stone_weight') {
+      let value = event.target.value;
+      if (field === 'purity') {
+        value = value.toUpperCase();
+        if (event.target.value !== value) {
+          event.target.value = value;
+        }
+      }
+      state.form[field] = value;
+      if (field === 'gross_weight' || field === 'stone_weight' || field === 'purity') {
         const netBox = root.querySelector('.net-box strong');
-        if (netBox) netBox.textContent = calculateNet(state.form) + ' g';
+        if (netBox && field !== 'purity') netBox.textContent = calculateNet(state.form) + ' g';
         const preview = root.querySelector('.print-bundle');
         if (preview && state.shop) preview.innerHTML = printableTagHtml(draftTag(), state.shop);
       }
@@ -690,6 +934,11 @@
   });
 
   root.addEventListener('change', function (event) {
+    if (event.target.getAttribute('data-field') === 'purchase_months') {
+      state.purchaseMonths = Math.max(1, Math.min(24, Number(event.target.value) || 1));
+      render();
+      return;
+    }
     if (event.target.name === 'category') {
       state.activeTag = null;
       state.form.category = event.target.value;
@@ -723,6 +972,29 @@
       if (addBtn && !addBtn.disabled) addBtn.click();
     }
   });
+
+  window.addEventListener('resize', function () {
+    if (state.navOpen && window.matchMedia('(min-width: 901px)').matches) {
+      state.navOpen = false;
+      document.body.classList.remove('nav-locked');
+      render();
+    }
+  });
+
+  window.addEventListener('orientationchange', function () {
+    if (state.navOpen) {
+      state.navOpen = false;
+      document.body.classList.remove('nav-locked');
+      render();
+    }
+  });
+
+  const resetParams = new URLSearchParams(window.location.search || '');
+  const resetFromUrl = resetParams.get('reset');
+  if (resetFromUrl) {
+    state.authMode = 'reset';
+    state.resetToken = resetFromUrl;
+  }
 
   api.me().then(function (auth) {
     acceptAuth(auth);

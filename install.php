@@ -23,8 +23,10 @@ $form = array(
     'db_name' => isset($_POST['db_name']) ? $_POST['db_name'] : 'tag_printer',
     'db_user' => isset($_POST['db_user']) ? $_POST['db_user'] : '',
     'db_pass' => isset($_POST['db_pass']) ? $_POST['db_pass'] : '',
-    'tag_price_inr' => isset($_POST['tag_price_inr']) ? $_POST['tag_price_inr'] : '2',
-    'free_registration_credits' => isset($_POST['free_registration_credits']) ? $_POST['free_registration_credits'] : '15',
+    'tag_price_inr' => isset($_POST['tag_price_inr']) ? $_POST['tag_price_inr'] : '0',
+    'free_registration_credits' => isset($_POST['free_registration_credits']) ? $_POST['free_registration_credits'] : '20',
+    'free_registration_validity_days' => isset($_POST['free_registration_validity_days']) ? $_POST['free_registration_validity_days'] : '2',
+    'monthly_plan_price_inr' => isset($_POST['monthly_plan_price_inr']) ? $_POST['monthly_plan_price_inr'] : '599',
     'admin_name' => isset($_POST['admin_name']) ? $_POST['admin_name'] : '',
     'admin_email' => isset($_POST['admin_email']) ? $_POST['admin_email'] : '',
     'admin_password' => isset($_POST['admin_password']) ? $_POST['admin_password'] : '',
@@ -98,9 +100,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['install'])) {
                     'db_pass' => $form['db_pass'],
                     'db_charset' => 'utf8mb4',
                     'secret_key' => $secret,
-                    'tag_price_inr' => max(1, (int) $form['tag_price_inr']),
+                    'tag_price_inr' => max(0, (int) $form['tag_price_inr']),
                     'free_registration_credits' => max(0, (int) $form['free_registration_credits']),
+                    'free_registration_validity_days' => max(1, (int) $form['free_registration_validity_days']),
+                    'monthly_plan_price_inr' => max(1, (int) $form['monthly_plan_price_inr']),
                     'app_name' => 'Jewellery Tag Printer',
+                    'razorpay_key_id' => '',
+                    'razorpay_key_secret' => '',
                 );
                 $written = file_put_contents(
                     __DIR__ . '/includes/config.php',
@@ -187,12 +193,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['install'])) {
               <input class="form-control" type="password" name="db_pass" value="<?php echo install_h($form['db_pass']); ?>">
             </div>
             <div class="col-md-6">
-              <label class="form-label">Rupees per tag (display)</label>
-              <input class="form-control" type="number" min="1" name="tag_price_inr" value="<?php echo install_h($form['tag_price_inr']); ?>">
+              <label class="form-label">Free tags on shop registration</label>
+              <input class="form-control" type="number" min="0" name="free_registration_credits" value="<?php echo install_h($form['free_registration_credits']); ?>">
             </div>
             <div class="col-md-6">
-              <label class="form-label">Free credits on shop registration</label>
-              <input class="form-control" type="number" min="0" name="free_registration_credits" value="<?php echo install_h($form['free_registration_credits']); ?>">
+              <label class="form-label">Free pack validity (days)</label>
+              <input class="form-control" type="number" min="1" name="free_registration_validity_days" value="<?php echo install_h($form['free_registration_validity_days']); ?>">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Monthly unlimited price (INR)</label>
+              <input class="form-control" type="number" min="1" name="monthly_plan_price_inr" value="<?php echo install_h($form['monthly_plan_price_inr']); ?>">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Rupees per tag (display, optional)</label>
+              <input class="form-control" type="number" min="0" name="tag_price_inr" value="<?php echo install_h($form['tag_price_inr']); ?>">
             </div>
 
             <h2 class="h5 mt-3">Admin portal account (optional)</h2>

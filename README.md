@@ -103,8 +103,15 @@ Installer writes `includes/config.php`. You can also copy `includes/config.examp
 | `db_user` | | MySQL user |
 | `db_pass` | | MySQL password |
 | `secret_key` | `change-this-before-production` | Session signing |
-| `tag_price_inr` | `2` | Displayed rupee price per tag |
-| `free_registration_credits` | `15` | Credits granted when a shop registers |
+| `tag_price_inr` | `0` | Optional display-only per-tag rate |
+| `free_registration_credits` | `20` | Free tags granted when a shop registers |
+| `free_registration_validity_days` | `2` | Free pack validity in days |
+| `monthly_plan_price_inr` | `599` | Monthly Unlimited price |
+| `razorpay_key_id` / `razorpay_key_secret` | | Razorpay API keys |
+| `app_url` | *(auto)* | Public base URL used in password-reset emails |
+| `mail_from` | `noreply@example.com` | From address for PHP `mail()` |
+| `mail_from_name` | `Jewellery Tag Printer` | From display name |
+| `mail_debug` | `false` | When true, forgot-password also returns `reset_url` for local testing |
 
 ## App URLs
 
@@ -120,13 +127,21 @@ Sessions (cookies) replace JWT. Login is same-origin; no separate API host is re
 
 ## Billing
 
-New shops receive `free_registration_credits` on registration. **Creating a tag spends 1 credit** unless an unlimited plan is active. Printing and reprinting do not spend credits.
+New shops receive **20 free tags valid for 2 days**. Creating a tag spends 1 free tag credit unless an unlimited plan is active. Printing and reprinting do not spend credits.
 
-Seeded plans:
+After the free pack is used up or expires, shops buy **Monthly Unlimited** at **₹599 per month** via **Razorpay**, and can choose **1–24 months** at checkout (total = ₹599 × months).
 
-- Starter: ₹1000 for 500 credits, 90 days
-- Growth: ₹1500 for 750 credits, 90 days
-- Pro Annual: ₹10000 unlimited printing for 365 days
+Configure Razorpay in `includes/config.php`:
+
+| Key | Purpose |
+| --- | --- |
+| `razorpay_key_id` | Razorpay Key Id (test or live) |
+| `razorpay_key_secret` | Razorpay Key Secret |
+| `monthly_plan_price_inr` | Monthly price (default `599`) |
+| `free_registration_credits` | Free tags on signup (default `20`) |
+| `free_registration_validity_days` | Free pack validity (default `2`) |
+
+If Razorpay keys are blank, Credits still works in **local test mode** (plan activates without Checkout).
 
 Local purchases can be confirmed in the app for testing. Replace that path with Razorpay before production.
 
