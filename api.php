@@ -3,6 +3,7 @@
 require_once __DIR__ . '/includes/init.php';
 
 header('X-Content-Type-Options: nosniff');
+apply_cors_headers();
 
 $method = request_method();
 $route = request_route();

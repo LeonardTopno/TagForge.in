@@ -1,9 +1,11 @@
 <?php
 
-function app_config($key, $default = null)
-{
-    $config = isset($GLOBALS['APP_CONFIG']) ? $GLOBALS['APP_CONFIG'] : array();
-    return array_key_exists($key, $config) ? $config[$key] : $default;
+if (!function_exists('app_config')) {
+    function app_config($key, $default = null)
+    {
+        $config = isset($GLOBALS['APP_CONFIG']) ? $GLOBALS['APP_CONFIG'] : array();
+        return array_key_exists($key, $config) ? $config[$key] : $default;
+    }
 }
 
 function now_utc()

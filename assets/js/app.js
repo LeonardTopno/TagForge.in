@@ -575,10 +575,49 @@
     });
   }
 
+  function ensurePrintPageSize(shop) {
+    const width = shop && shop.tag_width_mm ? shop.tag_width_mm : '80';
+    const height = shop && shop.tag_height_mm ? shop.tag_height_mm : '18';
+    let styleEl = document.getElementById('print-page-size');
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = 'print-page-size';
+      document.head.appendChild(styleEl);
+    }
+    styleEl.textContent =
+      '@media print {' +
+        '@page { size: ' + width + 'mm ' + height + 'mm; margin: 0; }' +
+        'html, body, #print-root { width: ' + width + 'mm !important; height: ' + height + 'mm !important; }' +
+      '}';
+  }
+
+  function getPrintRoot() {
+    let root = document.getElementById('print-root');
+    if (!root) {
+      root = document.createElement('div');
+      root.id = 'print-root';
+      root.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(root);
+    }
+    return root;
+  }
+
   function printTag(tag) {
+    const shop = state.shop;
+    if (!shop) return;
     state.activeTag = tag || draftTag();
+    ensurePrintPageSize(shop);
+    const printRoot = getPrintRoot();
+    printRoot.innerHTML = printableTagHtml(state.activeTag, shop);
     render();
+
+    const cleanup = function () {
+      window.removeEventListener('afterprint', cleanup);
+      printRoot.innerHTML = '';
+    };
+    window.addEventListener('afterprint', cleanup);
     window.setTimeout(function () { window.print(); }, 50);
+
     if (state.activeTag && state.activeTag.id) {
       api.markPrinted(state.activeTag.id).then(function (updated) {
         state.activeTag = updated;
