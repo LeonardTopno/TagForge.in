@@ -1,15 +1,14 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home4/tagforge/public_html/
-    - /bin/mkdir -p $DEPLOYPATH/assets $DEPLOYPATH/includes $DEPLOYPATH/scripts $DEPLOYPATH/assets/img $DEPLOYPATH/assets/css $DEPLOYPATH/assets/js
-    - /bin/cp -RF assets/. $DEPLOYPATH/assets/
-    - /bin/cp -RF includes/. $DEPLOYPATH/includes/
-    - /bin/cp -RF scripts/. $DEPLOYPATH/scripts/
-    - /bin/cp -f .htaccess $DEPLOYPATH
-    - /bin/cp -f admin.php $DEPLOYPATH
-    - /bin/cp -f api.php $DEPLOYPATH
-    - /bin/cp -f app.php $DEPLOYPATH
-    - /bin/cp -f index.php $DEPLOYPATH
-    - /bin/cp -f assets/img/favicon.ico $DEPLOYPATH/favicon.ico
-    - /bin/cp -f assets/img/favicon.png $DEPLOYPATH/favicon.png
+    - /bin/mkdir -p /home4/tagforge/public_html/assets/img /home4/tagforge/public_html/assets/css /home4/tagforge/public_html/assets/js /home4/tagforge/public_html/includes /home4/tagforge/public_html/scripts
+    - /bin/cp -RF /home4/tagforge/repositories/TagForge.in/assets/. /home4/tagforge/public_html/assets/
+    - /bin/cp -RF /home4/tagforge/repositories/TagForge.in/includes/. /home4/tagforge/public_html/includes/
+    - /bin/cp -RF /home4/tagforge/repositories/TagForge.in/scripts/. /home4/tagforge/public_html/scripts/
+    - /bin/cp -f /home4/tagforge/repositories/TagForge.in/.htaccess /home4/tagforge/public_html/.htaccess
+    - /bin/cp -f /home4/tagforge/repositories/TagForge.in/admin.php /home4/tagforge/public_html/admin.php
+    - /bin/cp -f /home4/tagforge/repositories/TagForge.in/api.php /home4/tagforge/public_html/api.php
+    - /bin/cp -f /home4/tagforge/repositories/TagForge.in/app.php /home4/tagforge/public_html/app.php
+    - /bin/cp -f /home4/tagforge/repositories/TagForge.in/index.php /home4/tagforge/public_html/index.php
+    - /bin/cp -f /home4/tagforge/repositories/TagForge.in/assets/img/favicon.ico /home4/tagforge/public_html/favicon.ico
+    - /bin/cp -f /home4/tagforge/repositories/TagForge.in/assets/img/favicon.png /home4/tagforge/public_html/favicon.png
