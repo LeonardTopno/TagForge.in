@@ -1,33 +1,89 @@
-﻿# Jewellery Tag Printer
+﻿# TagForge
 
-Multi-tenant jewellery tag printing app for shops using a **TVS LP 46 NEO browser-print workflow**.
+**Print tags. Run your shop.**
+
+Multi-tenant jewellery tag printing for shops — **TVS LP 46 NEO** browser-print workflow.
+
+Product site: [https://tagforge.in](https://tagforge.in)
+
+This copy is the **PHP, MySQL, HTML, CSS, JavaScript, and Bootstrap** edition for **shared hosting** (cPanel, Plesk, and similar).
+
+The previous FastAPI + React + PostgreSQL/SQLite stack is kept in [`legacy-fastapi-react/`](legacy-fastapi-react/).
+
+## Brand
+
+| | |
+| --- | --- |
+| Name | **TagForge** |
+| Tagline | **Print tags. Run your shop.** |
+| Domain | [tagforge.in](https://tagforge.in) |
+
+## Production domains
+
+| Purpose | URL | Entry |
+| --- | --- | --- |
+| Shop app | https://tagforge.in | `index.php` |
+| Mobile app | https://app.tagforge.in | `app.php` |
+| Admin portal | https://admin.tagforge.in | `admin.php` |
+| API | https://api.tagforge.in | `api.php` |
+
+Point all hostnames at the **same document root**. Host routing lives in `.htaccess` + `includes/hosts.php`. Full DNS/cPanel steps: [`docs/domains.html`](docs/domains.html).
 
 ## Stack
 
-- Backend: FastAPI, SQLAlchemy, PostgreSQL (Docker) or SQLite (local)
-- Frontend: React, Vite, TypeScript
-- Printing v1: TVS LP 46 NEO via the browser print dialog and millimetre CSS
-- UI: responsive layout for phone, tablet, and desktop; tested in modern Chromium, Firefox, and Safari
+- PHP 7.4+ with PDO MySQL
+- MySQL 5.7+ / MariaDB 10.3+
+- HTML, CSS, JavaScript
+- Bootstrap 5 and Bootstrap Icons (CDN)
+- Printing: TVS LP 46 NEO via the browser print dialog and millimetre CSS
 
-## First Milestone
+## What a shop can do
 
-A shop can register, create jewellery weight tags, preview a single-side hang tag at millimetre size, save, reprint, and tune print layout for the TVS LP 46 NEO.
+1. **Register or sign in** — new shops receive free tag credits.
+2. **Create a jewellery tag** — pick an item from the shop catalogue, enter Gold/Silver, weights, and purity. Net weight is calculated automatically. Creating a tag spends **1 credit**.
+3. **Preview and print** — Actual Preview shows the hang tag at millimetre size. One browser page prints the full face: weights left, fold mark centre, item and barcode right. Fold the tag so the sticker backs meet. Print and reprint do **not** spend credits.
+4. **Search history** — find saved tags and reprint without re-entering weights.
+5. **Settings** — three sections in the sidebar:
+   - **Shop Settings** — name, address, phone, GST No, and logo upload (shown in the sidebar, not on the tag)
+   - **Tag Settings** — prefix, millimetre width/height, font, X/Y offsets, and printer calibration help
+   - **Item Settings** — jewellery item catalogue used on Create Tag
 
-The printable face shows weights on the left, a centre fold mark, and item plus Code 128 barcode on the right. Fold the tag so the sticker backs meet. One browser print page — not direct USB.
+## Printer — TVS LP 46 NEO
 
-## Printer
+| Specification | Value |
+| --- | --- |
+| Brand / model | TVS Electronics LP 46 NEO |
+| Resolution | 203 DPI (~48 characters per line) |
+| Print speed | 6 ips (150 mm/s) |
+| Interface | USB |
+| Sensors | Movable black mark and gap sensor |
+| Ribbon | Thermal transfer (up to 300 m; 1/2" or 1" core) |
+| Max print width | ~104 mm (4 inch class) |
 
-**TVS LP 46 NEO** (TVS Electronics · LP 46 NEO) — 203 DPI desktop label printer for jewellery barbell hang tags.
+Printing uses the **browser print dialog** on the counter PC or tablet where the printer is installed — not direct USB from the hosted app. When the dialog opens, select **TVS LP 46 NEO**. Use scale **100%**, minimum margins, and no headers or footers.
 
-Printing uses the **browser print dialog** on the counter PC or tablet where the printer is installed — not direct USB from the hosted app. When the dialog opens, select **TVS LP 46 NEO** as the printer. Use scale **100%**, minimum margins, and no headers or footers.
+## Tag paper
 
-Tag paper: white glossy synthetic jewellery barbell tags (thermal transfer ribbon). Default label size in the app: **80 × 18 mm**.
+- **Type:** white glossy synthetic jewellery **barbell tags** (rat-tail / dumbbell style)
+- **Print method:** thermal transfer with ribbon (not direct thermal)
+- **Roll format:** two-up — two tags side by side on the liner (~75–80 mm liner width)
+- **Structure:** printable face → narrow neck/bridge → adhesive tail (wraps around jewellery)
 
-## Print Preview
+### Tag size (reference: Bin Ismail Gold)
 
-On **Create Tag**, the **Actual Preview** panel shows the hang tag at the shop’s millimetre size before printing. The caption reads `{width} x {height} mm · single side, fold at centre`.
+| Dimension | Measured / estimated |
+| --- | --- |
+| Total tag width (face + neck + tail) | ~72–80 mm |
+| Tag height | ~15–18 mm (app default **18 mm**) |
+| Printable face | ~50–55 mm × ~15–18 mm |
+| Neck / bridge | ~3–5 mm (not printed) |
+| Tail | ~15–22 mm (not printed) |
 
-The preview matches what prints on one browser page:
+**Suggested starting values in Tag Settings:** width **80 mm**, height **18 mm**, font **7–8 pt**. Adjust X/Y offsets after a test print until preview and physical tag match.
+
+## Print preview layout
+
+On **Create Tag**, the **Actual Preview** panel shows the hang tag at the shop’s millimetre size before printing.
 
 | Area | Content |
 | --- | --- |
@@ -35,264 +91,118 @@ The preview matches what prints on one browser page:
 | Centre | Dashed fold mark — fold here after printing so sticker backs meet |
 | Right panel | Category + item name (e.g. GOLD RING), Code 128 barcode, tag number |
 
-The barbell neck and tail to the right of the white face are structural only and are not printed. **Save & Print** and **Test Print** send this preview to the browser print dialog. Tune width, height, font, and X/Y offsets under **Settings → Tag Settings** until preview and physical tag align.
+The barbell neck and tail to the right of the white face are structural only and are not printed.
 
-## Printing (TVS LP 46 NEO)
+## Shared hosting (cPanel)
 
-This app is built for the **TVS LP 46 NEO** label printer (see [Printer](#printer) and [Print Preview](#print-preview) above).
+1. In cPanel, create a MySQL database and a user, and grant the user **ALL PRIVILEGES** on that database.
+2. Upload this project to `public_html` (or a subdirectory such as `public_html/tags`).
+3. Make sure `includes/` and `uploads/` are writable (755 or 775).
+4. Visit `https://your-domain/install.php`.
+5. Enter the MySQL host (usually `localhost`), database name, user, and password. Optionally create an admin portal account.
+6. After a successful install, **delete `install.php`**.
+7. Open the shop app at `index.php` and the admin portal at `admin.php`.
 
-Printing goes through the **browser print dialog** — not direct USB from the hosted app. When you print, choose **TVS LP 46 NEO** in that dialog. One page prints the full tag face shown in Actual Preview. Fold on the centre line so the adhesive backs meet.
+Do not upload `legacy-fastapi-react/` to the web root if you can avoid it. It is a source backup, not part of the hosted app. The included `.htaccess` blocks web access to that folder, `includes/`, and `sql/`.
 
-Tag size and offsets are set in **millimetres** under **Settings → Tag Settings** (width, height, font, horizontal and vertical offsets). The screen also shows the target printer and tag paper type. Default starting size is **80 × 18 mm**. Adjust values and test-print on the TVS LP 46 NEO until the preview matches the physical label.
+### Local PHP run
+
+Create a MySQL database, copy `includes/config.example.php` to `includes/config.php`, edit the credentials, then either run `install.php` in the browser or:
+
+```bash
+php -S localhost:8080
+```
+
+Open http://localhost:8080/install.php
+
+## Configuration
+
+Installer writes `includes/config.php`. You can also copy `includes/config.example.php`.
+
+| Key | Default | Purpose |
+| --- | --- | --- |
+| `db_host` | `localhost` | MySQL host |
+| `db_name` | `tag_printer` | MySQL database |
+| `db_user` | | MySQL user |
+| `db_pass` | | MySQL password |
+| `secret_key` | `change-this-before-production` | Session signing |
+| `tag_price_inr` | `0` | Optional display-only per-tag rate |
+| `free_registration_credits` | `20` | Free tags granted when a shop registers |
+| `free_registration_validity_days` | `2` | Free pack validity in days |
+| `monthly_plan_price_inr` | `599` | Monthly Unlimited price |
+| `app_name` | `TagForge` | Product name in UI and mail |
+| `app_tagline` | `Print tags. Run your shop.` | Primary brand tagline |
+| `razorpay_key_id` / `razorpay_key_secret` | | Razorpay API keys |
+| `app_url` / `urls.shop` | Shop canonical URL (emails, resets) |
+| `urls.admin` / `urls.app` / `urls.api` | Admin, mobile, and API public URLs |
+| `hosts.*` | Hostnames mapped to each surface |
+| `cookie_domain` | `.tagforge.in` in production |
+| `cors_origins` | Extra allowed browser origins for the API |
+| `mail_from` | `noreply@example.com` | From address for PHP `mail()` |
+| `mail_from_name` | `TagForge` | From display name |
+| `mail_debug` | `false` | When true, forgot-password also returns `reset_url` for local testing |
+
+## App URLs
+
+| Page | Path / host |
+| --- | --- |
+| Installer | `/install.php` |
+| Shop app | `/` or https://tagforge.in |
+| Mobile entry | `/app.php` or https://app.tagforge.in |
+| Admin portal | `/admin.php` or https://admin.tagforge.in |
+| JSON API | `/api.php?r=...` or https://api.tagforge.in |
+| Health | `/api.php?r=health` |
+
+Sessions (cookies) replace JWT. On production, `cookie_domain=.tagforge.in` shares login across shop / app / admin / api.
+
+## Billing
+
+New shops receive **20 free tags valid for 2 days**. Creating a tag spends 1 free tag credit unless an unlimited plan is active. Printing and reprinting do not spend credits.
+
+After the free pack is used up or expires, shops buy **Monthly Unlimited** at **₹599 per month** via **Razorpay**, and can choose **1–24 months** at checkout (total = ₹599 × months).
+
+Configure Razorpay in `includes/config.php`:
+
+| Key | Purpose |
+| --- | --- |
+| `razorpay_key_id` | Razorpay Key Id (test or live) |
+| `razorpay_key_secret` | Razorpay Key Secret |
+| `monthly_plan_price_inr` | Monthly price (default `599`) |
+| `free_registration_credits` | Free tags on signup (default `20`) |
+| `free_registration_validity_days` | Free pack validity (default `2`) |
+
+If Razorpay keys are blank, Credits still works in **local test mode** (plan activates without Checkout).
+
+Local purchases can be confirmed in the app for testing. Replace that path with Razorpay before production.
+
+## Project layout
+
+```
+index.php              Shop SPA shell
+admin.php              Admin portal shell
+api.php                JSON API router
+install.php            One-time MySQL installer (delete after use)
+includes/              PHP bootstrap, schema, helpers, layout
+assets/css/app.css     Shop and admin styles (print CSS included)
+assets/js/             app.js, api.js, admin.js, barcode.js
+uploads/logos/         Shop logos (gitignored contents)
+docs/                  Product, technical, and progress HTML overviews
+legacy-fastapi-react/  Previous FastAPI + React stack (reference only)
+```
 
 ## Docs
 
 Open these in a browser from the repo:
 
-- `docs/application.html` — product overview
-- `docs/technical.html` — stack, API, data model
-- `docs/progress.html` — done, next, and application-flow diagram
-
-## Configuration
-
-Copy `backend/.env.example` to `backend/.env` and adjust as needed.
-
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `DATABASE_URL` | `sqlite+aiosqlite:///./tag_printer.db` | Database connection |
-| `ALLOWED_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | CORS origins |
-| `SECRET_KEY` | `change-this-before-production` | JWT signing key |
-| `TAG_PRICE_INR` | `2` | Displayed rupee price per tag |
-| `FREE_REGISTRATION_CREDITS` | `15` | Credits granted when a shop registers |
-
-Frontend API base URL defaults to `http://localhost:8000`. Override with `VITE_API_BASE_URL`.
-
-## Run With Docker
-
-```bash
-cp backend/.env.example backend/.env
-docker compose up --build
-```
-
-Open:
-
-- Frontend: http://localhost:5173
-- Admin portal: http://localhost:5173/admin-portal
-- Backend API: http://localhost:8000/docs
-
-## Run Without Docker
-
-Backend:
-
-```bash
-cd backend
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-cp .env.example .env
-uvicorn app.main:app --reload
-```
-
-Frontend:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-## Deployment
-
-Docker Compose in this repo is set up for **local development** (Vite dev server, Uvicorn `--reload`, bind mounts). For production, run Postgres plus a built frontend and a non-reload API behind HTTPS.
-
-### Checklist
-
-1. **Postgres** — use a managed database or the Compose `postgres` service with a persistent volume.
-2. **Backend** — set `APP_ENV=production`, a strong `SECRET_KEY`, and `DATABASE_URL` pointing at Postgres.
-3. **CORS** — set `ALLOWED_ORIGINS` to your public frontend origin(s), e.g. `https://tags.example.com`.
-4. **Frontend** — build with the public API URL baked in via `VITE_API_BASE_URL`.
-5. **Uploads** — persist `backend/uploads/` (shop logos) on disk or replace with object storage later.
-6. **TLS** — terminate HTTPS at Nginx, Caddy, or your cloud load balancer.
-
-### Build frontend
-
-`VITE_API_BASE_URL` is read at **build time**. Set it to the URL shops will use for the API (same host with `/api` or a separate API subdomain).
-
-```bash
-cd frontend
-npm ci
-VITE_API_BASE_URL=https://api.example.com npm run build
-```
-
-Serve `frontend/dist/` as a static site. The SPA uses path-based routes (`/admin-portal`), so configure the web server to fall back to `index.html` for unknown paths.
-
-Example Nginx location blocks:
-
-```nginx
-location / {
-  root /var/www/tag-printer;
-  try_files $uri $uri/ /index.html;
-}
-```
-
-### Run backend (production)
-
-```bash
-cd backend
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-cp .env.example .env        # then edit for production
-uvicorn app.main:app --host 0.0.0.0 --port 8000
-```
-
-Use a process manager (systemd, supervisord) or container orchestration instead of running Uvicorn directly on a public host. Do **not** use `--reload` in production.
-
-Production `backend/.env` example:
-
-```env
-APP_ENV=production
-DATABASE_URL=postgresql+asyncpg://user:password@db-host:5432/tag_printer
-ALLOWED_ORIGINS=https://tags.example.com
-SECRET_KEY=<long-random-string>
-TAG_PRICE_INR=2
-FREE_REGISTRATION_CREDITS=15
-```
-
-### Docker notes
-
-To deploy with Compose, copy `backend/.env.example` to `backend/.env`, set production values, and adjust the stack:
-
-- Point `DATABASE_URL` at the `postgres` service (as in `docker-compose.yml`).
-- Remove `--reload` from `backend/Dockerfile` and use a production CMD.
-- Replace the `frontend` dev service with a multi-stage image that runs `npm run build` and serves `dist/` (Nginx or `vite preview` is only for smoke tests).
-- Mount a named volume at `backend/uploads` so logos survive restarts.
-- Set `VITE_API_BASE_URL` in the frontend **build** stage to the URL browsers will call.
-
-### AWS pilot deploy
-
-Lean layout for a **1–5 shop pilot** on AWS Free plan credits (~$200 / 6 months). Expect **~$10–12/month** AWS spend if you avoid RDS and NAT Gateway — enough headroom for the full 6-month window at low traffic.
-
-Printing still happens in the shop browser (TVS LP 46 NEO). AWS only hosts the web app and API.
-
-#### Architecture
-
-```text
-Shop browser
-  ├─ https://tags.example.com     → CloudFront → S3 (frontend dist)
-  └─ https://api.example.com      → EC2 t4g.micro (FastAPI + /uploads)
-                                        └─ Neon Postgres (free, outside AWS)
-```
-
-| Layer | Service | Notes |
-| --- | --- | --- |
-| Frontend | **S3 + CloudFront** | SPA fallback to `index.html` for `/admin-portal` |
-| API | **EC2 `t4g.micro`** (Mumbai `ap-south-1`) | Uvicorn via systemd; Nginx optional for TLS |
-| Database | **[Neon](https://neon.tech) free Postgres** | Cheaper than RDS for a pilot; use `postgresql+asyncpg://` |
-| Logos | **EBS volume** on EC2 | Mount at `backend/uploads/` — no code changes |
-| DNS | Route 53 or GoDaddy | `tags.` → CloudFront, `api.` → EC2 Elastic IP |
-| TLS | ACM on CloudFront + Nginx/Certbot on API | HTTPS required before real shop use |
-
-**Cheaper variant:** host the frontend on [Cloudflare Pages](https://pages.cloudflare.com) (free) and run only EC2 on AWS (~$8–11/month).
-
-#### Estimated cost (pilot traffic)
-
-| Item | ~USD/month |
-| --- | --- |
-| EC2 `t4g.micro` (24/7) | $7–9 |
-| EBS 10–20 GB | $1–2 |
-| S3 + CloudFront | $1–3 |
-| Neon Postgres | $0 (not AWS) |
-| **AWS subtotal** | **~$10–14** |
-
-At ~$12/month, $200 credits cover **well over 6 months** for a small pilot. Set billing alarms at $25, $50, and $100.
-
-**Avoid on the pilot:** RDS (~$15–25/mo extra), NAT Gateway (~$30+/mo), unattached Elastic IPs, oversized instances.
-
-#### Deploy checklist
-
-1. Create a **Neon** database; copy the connection string.
-2. Launch **EC2 `t4g.micro`** (Ubuntu 24.04, `ap-south-1`), attach a **10–20 GB EBS** volume for uploads.
-3. Security group: allow **443** (and **80** for Certbot) from the internet; restrict Neon to the EC2 public IP.
-4. On EC2: clone repo, install Python 3.12, `pip install -r backend/requirements.txt`, run Uvicorn with systemd on port 8000.
-5. Mount EBS at `/app/uploads` (or symlink to `backend/uploads`).
-6. Build frontend with the public API URL, upload `dist/` to S3, front with CloudFront.
-7. Point DNS: `tags.example.com` → CloudFront, `api.example.com` → EC2 Elastic IP.
-8. Verify `GET https://api.example.com/health` returns OK.
-
-#### Environment variables
-
-Backend `backend/.env` on EC2:
-
-```env
-APP_ENV=production
-DATABASE_URL=postgresql+asyncpg://USER:PASSWORD@ep-xxx.ap-southeast-1.aws.neon.tech/tag_printer?sslmode=require
-ALLOWED_ORIGINS=https://tags.example.com
-SECRET_KEY=<long-random-string>
-TAG_PRICE_INR=2
-FREE_REGISTRATION_CREDITS=15
-```
-
-Frontend build (run locally or in CI before uploading to S3):
-
-```bash
-cd frontend
-npm ci
-VITE_API_BASE_URL=https://api.example.com npm run build
-```
-
-Upload the contents of `frontend/dist/` to the S3 bucket behind CloudFront.
-
-#### CloudFront SPA routing
-
-Configure custom error responses so client-side routes work:
-
-- **403** → `/index.html` with response code **200**
-- **404** → `/index.html` with response code **200**
-
-#### After the pilot
-
-- **Upgrade** AWS to a paid plan and keep the same stack (~$10–15/mo lean), or
-- **Migrate** to Render / Railway + Neon + Cloudflare Pages, or
-- **Move logos to S3** when you need EC2 replacements without EBS snapshots.
-
-Open ports:
-
-| Service | Dev port | Production |
-| --- | --- | --- |
-| Frontend | 5173 | 443 (HTTPS) |
-| Backend API | 8000 | 443 or internal only |
-| Postgres | 5432 | internal only |
-
-### After deploy
-
-- API docs: `https://api.example.com/docs`
-- Shop app: `https://tags.example.com`
-- Admin portal: `https://tags.example.com/admin-portal`
-- Health check: `GET /health`
-
-Shops still print through the **browser** on the counter PC or tablet where the TVS LP 46 NEO is installed. Deployment hosts the web app and API; it does not replace local browser printing.
-
-## Billing
-
-New shops receive `FREE_REGISTRATION_CREDITS` on registration. Creating a tag spends 1 credit unless an unlimited plan is active. Printing and reprinting do not spend credits.
-
-Seeded plans:
-
-- Starter: ₹1000 for 500 credits, 90 days
-- Growth: ₹1500 for 750 credits, 90 days
-- Pro Annual: ₹10000 unlimited printing for 365 days
-
-Local purchases can be confirmed in the app for testing. Replace that path with Razorpay before production.
+- [`docs/application.html`](docs/application.html) — product overview, printer and tag media specs
+- [`docs/technical.html`](docs/technical.html) — data model and API
+- [`docs/progress.html`](docs/progress.html) — done, next, and application-flow diagram
 
 ## Notes
 
-- **Printer:** TVS LP 46 NEO (TVS Electronics). Select it in the browser print dialog — no direct USB path from the web app.
+- **Printer:** TVS LP 46 NEO. Select it in the browser print dialog — no direct USB path from the web app.
 - **Print Preview:** Create Tag → **Actual Preview** shows the single-side layout at millimetre size before you print.
-- **Single-side print, fold at centre** — weights and barcode print on one face; fold on the dashed centre mark.
-- Calibrate layout in **Settings → Tag Settings**: millimetre width, height (default 18 mm), font, and X/Y offsets. Reference hardware notes are in `docs/application.html`.
-- Create Tag uses item catalogue + Gold/Silver, gross and stone weights; net weight = gross − stone.
-- Each shop keeps an item catalogue (Ring, Chain, and so on) used as the Create Tag dropdown.
-- Shop logos are uploaded in Settings and shown in the sidebar. They are not printed on the hang tag.
-- The shop UI uses a collapsible menu on narrow screens, scrollable tables, and touch-friendly controls.
-- A future Windows print agent can be added after the physical label dimensions and offsets are proven.
+- Calibrate layout in **Settings → Tag Settings**: millimetre width, height (default 18 mm), font, and X/Y offsets.
+- Shop logos are uploaded in **Settings → Shop Settings** and shown in the sidebar. They are not printed on the hang tag.
+- Each shop keeps an item catalogue (Ring, Chain, and so on) under **Settings → Item Settings**.
+- The previous Python/React app remains in `legacy-fastapi-react/` for reference.

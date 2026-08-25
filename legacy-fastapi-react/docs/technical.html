@@ -97,27 +97,24 @@
     <div class="grid">
       <article class="card">
         <h3>Backend</h3>
-        <p>PHP 7.4+ with PDO MySQL, session cookies, and <code>password_hash()</code>. JSON API in <code>api.php</code>. Installer in <code>install.php</code> creates tables and <code>includes/config.php</code>.</p>
+        <p>FastAPI 0.115, SQLAlchemy 2 async, Pydantic Settings, Uvicorn. Passlib/bcrypt for passwords, python-jose JWT for sessions.</p>
       </article>
       <article class="card">
         <h3>Frontend</h3>
-        <p>HTML, CSS, JavaScript, Bootstrap 5. Shop UI in <code>assets/js/app.js</code>, admin UI in <code>assets/js/admin.js</code>. Code 128 bars in <code>assets/js/barcode.js</code>. PHP session cookies, not <code>localStorage</code> JWT.</p>
+        <p>React 19, Vite 6, TypeScript. Single-page UI in <code>frontend/src/App.tsx</code>. Code 128 bars in <code>barcode.ts</code>. Icons from lucide-react. Auth token in <code>localStorage</code>.</p>
       </article>
       <article class="card">
         <h3>Data and runtimes</h3>
-        <p>MySQL / MariaDB on shared hosting. Tables created by <code>install.php</code>. The previous FastAPI + React + Postgres/SQLite app is stored in <code>legacy-fastapi-react/</code>.</p>
+        <p>SQLite via aiosqlite for local runs. PostgreSQL 16 + asyncpg under Docker Compose. Tables created on startup.</p>
       </article>
     </div>
 
     <h2>Repository layout</h2>
-<pre>includes/             PHP bootstrap, PDO, schema, helpers
-api.php               JSON API (same-origin sessions)
-index.php / admin.php Shop and admin HTML shells
-assets/js             Shop UI, admin UI, Code 128, API client
-assets/css            Screen layout and millimetre print CSS
-uploads/logos/        Shop logos
-install.php           Shared-hosting installer
-legacy-fastapi-react/ Backup of FastAPI + React stack
+<pre>backend/app/          FastAPI app, models, schemas, security
+backend/uploads/     Shop logos (gitignored)
+backend/.env.example  Runtime configuration
+frontend/src/         React UI, API client, types, Code 128, print CSS
+docker-compose.yml    postgres, backend, frontend
 docs/                 application, technical, and progress HTML</pre>
 
     <h2>Tenancy and auth</h2>
@@ -125,7 +122,7 @@ docs/                 application, technical, and progress HTML</pre>
       <li>A <code>Shop</code> is the tenant. Users belong to one shop via <code>shop_id</code>.</li>
       <li>Roles: <code>owner</code>, <code>operator</code>, <code>admin</code>. Admin routes call <code>require_admin()</code>.</li>
       <li>Register creates shop + owner, hashes the password, and writes a credit ledger grant.</li>
-      <li>Login and <code>/me</code> return the session user plus nested shop payload.</li>
+      <li>Login and <code>/me</code> return a JWT plus nested user and shop payloads.</li>
       <li>Tag list, create, print, settings, dashboard, and billing queries always filter by <code>current_user.shop_id</code>.</li>
     </ul>
 
@@ -148,30 +145,29 @@ docs/                 application, technical, and progress HTML</pre>
     <p>Net weight is <code>gross − stone − other_deduction</code> on the API (Create Tag UI sends gross and stone; net preview uses gross − stone). Negative net weight is rejected with HTTP 422.</p>
 
     <h2>HTTP API</h2>
-    <p>JSON routes are served from <code>api.php?r=...</code> on the same host. Authenticated routes use the PHP session cookie plus an <code>X-CSRF-Token</code> header.</p>
+    <p>Base URL defaults to <code>http://localhost:8000</code>. Interactive docs: <code>/docs</code>. Authenticated routes send <code>Authorization: Bearer &lt;token&gt;</code>.</p>
     <table>
       <thead>
         <tr><th>Method / path</th><th>Purpose</th></tr>
       </thead>
       <tbody>
-        <tr><td><span class="method">GET</span> api.php?r=health</td><td>Liveness</td></tr>
-        <tr><td><span class="method">POST</span> api.php?r=auth/register</td><td>Create shop and owner; grant free credits</td></tr>
-        <tr><td><span class="method">POST</span> api.php?r=auth/login</td><td>Session + shop</td></tr>
-        <tr><td><span class="method">GET</span> api.php?r=me</td><td>Restore session</td></tr>
-        <tr><td><span class="method">GET</span> api.php?r=dashboard</td><td>Tag/print counts, recent tags, billing summary</td></tr>
-        <tr><td><span class="method">GET</span> api.php?r=tags</td><td>Last 100 tags; optional <code>search</code></td></tr>
-        <tr><td><span class="method">POST</span> api.php?r=tags</td><td>Allocate tag number, debit 1 credit</td></tr>
-        <tr><td><span class="method">POST</span> api.php?r=tags/print</td><td>Log print; no credit debit</td></tr>
-        <tr><td><span class="method">GET/PUT</span> api.php?r=settings</td><td>Shop profile and millimetre layout</td></tr>
-        <tr><td><span class="method">POST/DELETE</span> api.php?r=settings/logo</td><td>Upload or remove shop logo (JPG, PNG, WEBP, GIF, max 5 MB)</td></tr>
-        <tr><td><span class="method">GET/POST/PUT/DELETE</span> api.php?r=settings/items</td><td>Item catalogue for the Create Tag dropdown</td></tr>
-        <tr><td><span class="method">GET</span> api.php?r=billing/summary|plans|ledger</td><td>Balance and catalogue</td></tr>
-        <tr><td><span class="method">POST</span> api.php?r=billing/purchases</td><td>Create local test order</td></tr>
-        <tr><td><span class="method">POST</span> api.php?r=billing/purchases/confirm</td><td>Mark paid and grant credits or unlimited window</td></tr>
-        <tr><td><span class="method">GET/PUT</span> api.php?r=admin/plans</td><td>Admin plan maintenance</td></tr>
-        <tr><td><span class="method">GET</span> api.php?r=admin/tenants</td><td>Tenant list</td></tr>
-        <tr><td><span class="method">GET</span> api.php?r=admin/tenants/ledger</td><td>Tenant ledger</td></tr>
-        <tr><td><span class="method">POST</span> api.php?r=admin/tenants/credit-adjustments</td><td>Set/delta credits, validity, unlimited</td></tr>
+        <tr><td><span class="method">GET</span> /health</td><td>Liveness</td></tr>
+        <tr><td><span class="method">POST</span> /auth/register</td><td>Create shop and owner; grant free credits</td></tr>
+        <tr><td><span class="method">POST</span> /auth/login</td><td>JWT + shop</td></tr>
+        <tr><td><span class="method">GET</span> /me</td><td>Restore session</td></tr>
+        <tr><td><span class="method">GET</span> /dashboard</td><td>Tag/print counts, recent tags, billing summary</td></tr>
+        <tr><td><span class="method">GET</span> /tags</td><td>Last 100 tags; optional <code>search</code></td></tr>
+        <tr><td><span class="method">POST</span> /tags</td><td>Allocate tag number, debit 1 credit</td></tr>
+        <tr><td><span class="method">POST</span> /tags/{id}/print</td><td>Log print; no credit debit</td></tr>
+        <tr><td><span class="method">GET/PUT</span> /settings</td><td>Shop profile and millimetre layout</td></tr>
+        <tr><td><span class="method">POST/DELETE</span> /settings/logo</td><td>Upload or remove shop logo (JPG, PNG, WEBP, GIF, max 5 MB)</td></tr>
+        <tr><td><span class="method">GET/POST/PUT/DELETE</span> /settings/items</td><td>Item catalogue for the Create Tag dropdown</td></tr>
+        <tr><td><span class="method">GET</span> /billing/summary|plans|ledger</td><td>Balance and catalogue</td></tr>
+        <tr><td><span class="method">POST</span> /billing/purchases</td><td>Create local test order</td></tr>
+        <tr><td><span class="method">POST</span> /billing/purchases/{id}/confirm</td><td>Mark paid and grant credits or unlimited window</td></tr>
+        <tr><td><span class="method">GET/PUT</span> /admin/plans</td><td>Admin plan maintenance</td></tr>
+        <tr><td><span class="method">GET</span> /admin/tenants[/{id}/ledger]</td><td>Tenant list and ledger</td></tr>
+        <tr><td><span class="method">POST</span> /admin/tenants/{id}/credit-adjustments</td><td>Set/delta credits, validity, unlimited</td></tr>
       </tbody>
     </table>
     <p>Insufficient credits return HTTP 402. Duplicate email or duplicate item name returns 409. Admin without role <code>admin</code> returns 403. Oversized logos return 413.</p>
@@ -182,7 +178,7 @@ docs/                 application, technical, and progress HTML</pre>
       <li>Expired <code>credits_expire_at</code> zeros the shop balance before charging.</li>
       <li>Create tag charges 1 credit. Print and reprint do not charge.</li>
       <li>Paid credit plans add credits and extend expiry; unlimited plans extend <code>unlimited_until</code>.</li>
-      <li>Tag price and signup grant come from <code>includes/config.php</code>: <code>tag_price_inr</code>, <code>free_registration_credits</code>.</li>
+      <li>Tag price and signup grant come from settings: <code>TAG_PRICE_INR</code>, <code>FREE_REGISTRATION_CREDITS</code>.</li>
     </ul>
 
     <h2>Frontend behaviour</h2>
@@ -192,10 +188,10 @@ docs/                 application, technical, and progress HTML</pre>
       <li>Create Tag: item dropdown from <code>/settings/items</code>, Gold/Silver radios, gross and stone weights, live net weight (gross − stone), Save / Save &amp; Print / Test Print.</li>
       <li>Preview renders one <code>PrintableTag</code>: left panel weights, centre fold mark, right panel category + item + Code 128 + tag number. Labelled “single side, fold at centre”.</li>
       <li>Shop logo is uploaded as <code>multipart/form-data</code>. The API returns <code>logo_url</code> (<code>/uploads/logos/{shop_id}.ext</code>). The sidebar shows it; the hang tag does not.</li>
-      <li>Path <code>admin.php</code> loads the admin shell.</li>
-      <li>Preview sizes one hang-tag face from shop millimetre fields. Code 128 barcode in <code>assets/js/barcode.js</code>.</li>
+      <li>Path <code>/admin-portal</code> swaps in the admin shell (same SPA, no router library).</li>
+      <li>Preview sizes one hang-tag face from shop millimetre fields. Code 128 barcode in <code>frontend/src/barcode.ts</code>.</li>
       <li>Print uses CSS <code>@media print</code> — one page (<code>@page { size: 80mm 18mm }</code>). Print rules hide navigation chrome and keep tag colours with <code>print-color-adjust</code>.</li>
-      <li><code>assets/js/api.js</code> wraps fetch to <code>api.php</code> on the same origin.</li>
+      <li><code>frontend/src/api.ts</code> wraps fetch; <code>VITE_API_BASE_URL</code> overrides the API host.</li>
     </ul>
 
     <h2>Configuration</h2>
@@ -204,13 +200,15 @@ docs/                 application, technical, and progress HTML</pre>
         <tr><th>Variable</th><th>Default</th><th>Used for</th></tr>
       </thead>
       <tbody>
-        <tr><td>db_host / db_name / db_user / db_pass</td><td>localhost / tag_printer</td><td>MySQL connection</td></tr>
-        <tr><td>secret_key</td><td>generated at install</td><td>Session hardening placeholder</td></tr>
-        <tr><td>tag_price_inr</td><td>2</td><td>Billing summary display price</td></tr>
-        <tr><td>free_registration_credits</td><td>15</td><td>Signup grant and shop opening balance</td></tr>
+        <tr><td>DATABASE_URL</td><td>sqlite+aiosqlite:///./tag_printer.db</td><td>SQLAlchemy async engine</td></tr>
+        <tr><td>ALLOWED_ORIGINS</td><td>localhost:5173 variants</td><td>CORS</td></tr>
+        <tr><td>SECRET_KEY</td><td>dev placeholder</td><td>JWT signing</td></tr>
+        <tr><td>TAG_PRICE_INR</td><td>2</td><td>Billing summary display price</td></tr>
+        <tr><td>FREE_REGISTRATION_CREDITS</td><td>15</td><td>Signup grant and shop opening balance</td></tr>
+        <tr><td>VITE_API_BASE_URL</td><td>http://localhost:8000</td><td>Frontend API client</td></tr>
       </tbody>
     </table>
-    <p>Loaded from <code>includes/config.php</code> after <code>install.php</code> runs. Copy <code>includes/config.example.php</code> for a manual setup.</p>
+    <p>Loaded in <code>backend/app/config.py</code> via Pydantic Settings from <code>backend/.env</code>.</p>
 
     <h2 id="physical-setup">Physical printer and media</h2>
     <p>Reference hardware measured at a live jewellery counter (Bin Ismail Gold). Use these values as the starting point for <strong>Settings → Tag Settings</strong> and physical calibration on the TVS LP 46 NEO.</p>
@@ -262,7 +260,7 @@ docs/                 application, technical, and progress HTML</pre>
     <p><strong>Suggested Tag Settings defaults:</strong> <code>tag_width_mm</code> = 80, <code>tag_height_mm</code> = 18 (shop model default), <code>font_size_pt</code> = 7–8, offsets = 0 then tune on test print. Barcode target height in CSS: ~4.5–6 mm at 203 DPI.</p>
 
     <h3>Mapping to frontend layout</h3>
-    <p><code>printableTagHtml</code> in <code>assets/js/app.js</code> renders a horizontal barbell strip with a single printable face:</p>
+    <p><code>PrintableTag</code> in <code>frontend/src/App.tsx</code> renders a horizontal barbell strip with a single printable face:</p>
 <pre>print-tag grid:  [ tag-printable-face ] | tag-neck (2.5mm) | tag-tail (18mm)
 
 tag-printable-face grid:  tag-panel-left (weights) | tag-fold-mark | tag-panel-right (item + barcode)</pre>
@@ -282,10 +280,10 @@ tag-printable-face grid:  tag-panel-left (weights) | tag-fold-mark | tag-panel-r
     <h2>TVS LP 46 NEO browser-print workflow</h2>
     <p>The app is built for the <strong>TVS LP 46 NEO</strong> label printer. Printing uses the browser print dialog, not direct USB from the server. The operator selects <strong>TVS LP 46 NEO</strong> in that dialog.</p>
     <p>Create Tag renders one <code>PrintableTag</code> in a <code>print-bundle</code>. Print CSS keeps only that bundle visible. One page prints the full face: left weights, centre fold mark, right item + Code 128 of <code>tag_number</code> + the human-readable number. Neck and tail are not printed.</p>
-    <p>Millimetre layout comes from <strong>Settings → Tag Settings</strong> (<code>tag_width_mm</code>, <code>tag_height_mm</code>, <code>font_size_pt</code>, offsets). Tag Settings also shows printer model and “single-side print, fold at centre” guidance. Shop logos live under <code>uploads/logos/</code> (gitignored).</p>
+    <p>Millimetre layout comes from <strong>Settings → Tag Settings</strong> (<code>tag_width_mm</code>, <code>tag_height_mm</code>, <code>font_size_pt</code>, offsets). Tag Settings also shows printer model and “single-side print, fold at centre” guidance. Shop logos live under <code>backend/uploads/logos/</code> (gitignored).</p>
 
     <h2>Local run</h2>
-    <p>Create a MySQL database, visit <code>install.php</code>, then open <code>index.php</code>. For a built-in server: <code>php -S localhost:8080</code>. The previous FastAPI/React app is in <code>legacy-fastapi-react/</code>.</p>
+    <p>Without Docker: venv + <code>uvicorn app.main:app --reload</code> in <code>backend/</code>, and <code>npm run dev</code> in <code>frontend/</code>. With Docker: <code>docker compose up --build</code> starts Postgres 16, API on 8000, Vite on 5173. SQLite schema migrations for extra shop columns are applied in <code>create_database()</code> for local files only.</p>
 
     <h2>Known gaps</h2>
     <ul>
