@@ -1,10 +1,33 @@
-﻿# Jewellery Tag Printer
+﻿# TagForge
 
-Multi-tenant jewellery tag printing app for shops using a **TVS LP 46 NEO browser-print workflow**.
+**Print tags. Run your shop.**
+
+Multi-tenant jewellery tag printing for shops — **TVS LP 46 NEO** browser-print workflow.
+
+Product site: [https://tagforge.in](https://tagforge.in)
 
 This copy is the **PHP, MySQL, HTML, CSS, JavaScript, and Bootstrap** edition for **shared hosting** (cPanel, Plesk, and similar).
 
 The previous FastAPI + React + PostgreSQL/SQLite stack is kept in [`legacy-fastapi-react/`](legacy-fastapi-react/).
+
+## Brand
+
+| | |
+| --- | --- |
+| Name | **TagForge** |
+| Tagline | **Print tags. Run your shop.** |
+| Domain | [tagforge.in](https://tagforge.in) |
+
+## Production domains
+
+| Purpose | URL | Entry |
+| --- | --- | --- |
+| Shop app | https://tagforge.in | `index.php` |
+| Mobile app | https://app.tagforge.in | `app.php` |
+| Admin portal | https://admin.tagforge.in | `admin.php` |
+| API | https://api.tagforge.in | `api.php` |
+
+Point all hostnames at the **same document root**. Host routing lives in `.htaccess` + `includes/hosts.php`. Full DNS/cPanel steps: [`docs/domains.html`](docs/domains.html).
 
 ## Stack
 
@@ -107,23 +130,30 @@ Installer writes `includes/config.php`. You can also copy `includes/config.examp
 | `free_registration_credits` | `20` | Free tags granted when a shop registers |
 | `free_registration_validity_days` | `2` | Free pack validity in days |
 | `monthly_plan_price_inr` | `599` | Monthly Unlimited price |
+| `app_name` | `TagForge` | Product name in UI and mail |
+| `app_tagline` | `Print tags. Run your shop.` | Primary brand tagline |
 | `razorpay_key_id` / `razorpay_key_secret` | | Razorpay API keys |
-| `app_url` | *(auto)* | Public base URL used in password-reset emails |
+| `app_url` / `urls.shop` | Shop canonical URL (emails, resets) |
+| `urls.admin` / `urls.app` / `urls.api` | Admin, mobile, and API public URLs |
+| `hosts.*` | Hostnames mapped to each surface |
+| `cookie_domain` | `.tagforge.in` in production |
+| `cors_origins` | Extra allowed browser origins for the API |
 | `mail_from` | `noreply@example.com` | From address for PHP `mail()` |
-| `mail_from_name` | `Jewellery Tag Printer` | From display name |
+| `mail_from_name` | `TagForge` | From display name |
 | `mail_debug` | `false` | When true, forgot-password also returns `reset_url` for local testing |
 
 ## App URLs
 
-| Page | Path |
+| Page | Path / host |
 | --- | --- |
 | Installer | `/install.php` |
-| Shop app | `/index.php` |
-| Admin portal | `/admin.php` |
-| JSON API | `/api.php?r=...` |
+| Shop app | `/` or https://tagforge.in |
+| Mobile entry | `/app.php` or https://app.tagforge.in |
+| Admin portal | `/admin.php` or https://admin.tagforge.in |
+| JSON API | `/api.php?r=...` or https://api.tagforge.in |
 | Health | `/api.php?r=health` |
 
-Sessions (cookies) replace JWT. Login is same-origin; no separate API host is required.
+Sessions (cookies) replace JWT. On production, `cookie_domain=.tagforge.in` shares login across shop / app / admin / api.
 
 ## Billing
 

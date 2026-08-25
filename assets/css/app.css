@@ -29,9 +29,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-body.nav-locked {
-  overflow: hidden;
-  touch-action: none;
+body.surface-mobile .auth-panel {
+  width: min(100%, 440px);
+}
+
+body.surface-mobile .workspace {
+  padding-bottom: max(24px, env(safe-area-inset-bottom, 0px));
 }
 
 #root,
@@ -849,6 +852,36 @@ th {
 .auth-heading {
   align-items: flex-start;
   margin-bottom: 24px;
+}
+
+.auth-heading h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.brand-tagline {
+  margin: 6px 0 0;
+  color: #0f766e;
+  font-size: 1.05rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.auth-support {
+  margin: 8px 0 0;
+  color: #718096;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.auth-layout .brand-tagline {
+  color: #5eead4;
+}
+
+.auth-layout .auth-support {
+  color: #b8c4ce;
 }
 
 .error-banner {

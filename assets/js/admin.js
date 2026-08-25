@@ -23,6 +23,8 @@
   };
 
   const root = document.getElementById('app');
+  const brandName = (window.APP_CONFIG && window.APP_CONFIG.appName) || 'TagForge';
+  const brandTagline = (window.APP_CONFIG && window.APP_CONFIG.appTagline) || 'Print tags. Run your shop.';
 
   function formatDate(value) {
     if (!value) return 'Not set';
@@ -40,8 +42,12 @@
       '<main class="auth-layout admin-auth-layout">' +
         '<section class="auth-panel">' +
           '<div class="auth-heading">' +
-            '<span class="brand-mark">JT</span>' +
-            '<div><h1>Admin Portal</h1><p>Owner access for billing plans and platform settings.</p></div>' +
+            '<span class="brand-mark">TF</span>' +
+            '<div>' +
+              '<h1>' + escapeHtml(brandName) + '</h1>' +
+              '<p class="brand-tagline">' + escapeHtml(brandTagline) + '</p>' +
+              '<p class="auth-support">Admin portal — billing plans and platform settings.</p>' +
+            '</div>' +
           '</div>' +
           '<form data-action="admin-login" class="form-grid">' +
             '<label>Admin email<input class="form-control" name="email" type="email" required></label>' +
@@ -141,9 +147,9 @@
     return (
       '<main class="admin-portal-shell">' +
         '<section class="admin-portal-topbar">' +
-          '<div class="brand"><span class="brand-mark">JT</span><div><h1>Admin Portal</h1><p>' + escapeHtml(state.adminUser.email) + '</p></div></div>' +
+          '<div class="brand"><span class="brand-mark">TF</span><div><h1>TagForge Admin</h1><p>' + escapeHtml(state.adminUser.email) + '</p></div></div>' +
           '<div class="button-row">' +
-            '<a class="btn btn-light" href="index.php"><i class="bi bi-tag"></i> Shop app</a>' +
+            '<a class="btn btn-light" href="' + escapeHtml((window.APP_CONFIG && window.APP_CONFIG.shopUrl) ? window.APP_CONFIG.shopUrl : 'index.php') + '"><i class="bi bi-tag"></i> Shop app</a>' +
             '<button type="button" data-action="logout"><i class="bi bi-box-arrow-right"></i> Sign out</button>' +
           '</div>' +
         '</section>' +

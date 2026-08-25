@@ -10,15 +10,30 @@ return array(
     'free_registration_credits' => 20,
     'free_registration_validity_days' => 2,
     'monthly_plan_price_inr' => 599,
-    'app_name' => 'Jewellery Tag Printer',
-    // Optional public URL used in password-reset emails (auto-detected if blank).
-    'app_url' => '',
-    // From address for PHP mail() on shared hosting.
-    'mail_from' => 'noreply@example.com',
-    'mail_from_name' => 'Jewellery Tag Printer',
-    // When true, forgot-password API also returns reset_url (useful for local testing).
+    'app_name' => 'TagForge',
+    'app_tagline' => 'Print tags. Run your shop.',
+    // Canonical public URLs (TagForge production)
+    'app_url' => 'https://tagforge.in',
+    'urls' => array(
+        'shop' => 'https://tagforge.in',
+        'admin' => 'https://admin.tagforge.in',
+        'app' => 'https://app.tagforge.in',
+        'api' => 'https://api.tagforge.in',
+    ),
+    // Hostnames that map to each surface (all point at the same codebase/docroot)
+    'hosts' => array(
+        'shop' => array('tagforge.in', 'www.tagforge.in'),
+        'admin' => array('admin.tagforge.in'),
+        'app' => array('app.tagforge.in'),
+        'api' => array('api.tagforge.in'),
+    ),
+    // Share login cookie across subdomains on HTTPS
+    'cookie_domain' => '.tagforge.in',
+    // Extra browser origins allowed to call the API with credentials (optional)
+    'cors_origins' => array(),
+    'mail_from' => 'noreply@tagforge.in',
+    'mail_from_name' => 'TagForge',
     'mail_debug' => false,
-    // Razorpay Dashboard → API Keys (use test keys first).
     'razorpay_key_id' => '',
     'razorpay_key_secret' => '',
 );

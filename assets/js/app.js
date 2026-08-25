@@ -40,6 +40,21 @@
   };
 
   const root = document.getElementById('app');
+  const brandName = (window.APP_CONFIG && window.APP_CONFIG.appName) || 'TagForge';
+  const brandTagline = (window.APP_CONFIG && window.APP_CONFIG.appTagline) || 'Print tags. Run your shop.';
+
+  function brandHeading(supportText) {
+    return (
+      '<div class="auth-heading">' +
+        '<span class="brand-mark">TF</span>' +
+        '<div>' +
+          '<h1>' + escapeHtml(brandName) + '</h1>' +
+          '<p class="brand-tagline">' + escapeHtml(brandTagline) + '</p>' +
+          (supportText ? '<p class="auth-support">' + escapeHtml(supportText) + '</p>' : '') +
+        '</div>' +
+      '</div>'
+    );
+  }
 
   function formatWeight(value) {
     const parsed = Number(value);
@@ -193,13 +208,14 @@
     const isForgot = state.authMode === 'forgot';
     const isReset = state.authMode === 'reset';
 
-    let heading = 'Shop accounts, weight entry, preview and browser printing.';
+    let heading = '';
     let formFields = '';
     let submitLabel = 'Sign in';
     let submitIcon = 'bi-box-arrow-in-right';
     let secondary = '';
 
     if (isRegister) {
+      heading = 'Create a shop account to start printing hang tags.';
       submitLabel = 'Create shop account';
       submitIcon = 'bi-person-plus';
       formFields =
@@ -235,10 +251,7 @@
     return (
       '<main class="auth-layout">' +
         '<section class="auth-panel">' +
-          '<div class="auth-heading">' +
-            '<span class="brand-mark">JT</span>' +
-            '<div><h1>Jewellery Tag Printer</h1><p>' + escapeHtml(heading) + '</p></div>' +
-          '</div>' +
+          brandHeading(heading) +
           '<form data-action="auth" class="form-grid">' +
             formFields +
             (state.error ? '<div class="error-banner">' + escapeHtml(state.error) + '</div>' : '') +
@@ -471,7 +484,7 @@
     const shop = state.shop;
     const logo = shop.logo_url
       ? '<img class="brand-mark brand-logo" src="' + escapeHtml(shop.logo_url) + '" alt="">'
-      : '<span class="brand-mark">JT</span>';
+      : '<span class="brand-mark">TF</span>';
     const settingsSubnav = state.view === 'settings'
       ? '<div class="subnav">' +
           '<button type="button" class="' + (state.settingsSection === 'shop' ? 'active' : '') + '" data-action="go" data-view="settings" data-section="shop"><i class="bi bi-building"></i> Shop Settings</button>' +
@@ -619,7 +632,7 @@
           key: purchase.razorpay_key_id,
           amount: purchase.amount_paise,
           currency: purchase.currency || 'INR',
-          name: 'Jewellery Tag Printer',
+          name: 'TagForge',
           description: 'Monthly Unlimited · ' + purchase.months + (purchase.months === 1 ? ' month' : ' months'),
           order_id: purchase.razorpay_order_id,
           handler: function (response) {

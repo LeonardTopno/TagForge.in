@@ -3,9 +3,13 @@ if (!isset($pageScript)) {
     $pageScript = 'app.js';
 }
 if (!isset($pageTitle)) {
-    $pageTitle = 'Jewellery Tag Printer';
+    $pageTitle = 'TagForge — Print tags. Run your shop.';
+}
+if (!isset($pageSurface)) {
+    $pageSurface = $pageScript === 'admin.js' ? 'admin' : 'shop';
 }
 $csrf = csrf_token();
+$boot = frontend_boot_config($pageScript, $pageSurface);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -24,11 +28,12 @@ $csrf = csrf_token();
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/app.css">
 </head>
-<body>
+<body class="surface-<?php echo htmlspecialchars($pageSurface, ENT_QUOTES, 'UTF-8'); ?>">
   <div id="app"></div>
   <script>
     window.CSRF_TOKEN = <?php echo json_encode($csrf); ?>;
-    window.APP_PAGE = <?php echo json_encode($pageScript === 'admin.js' ? 'admin' : 'shop'); ?>;
+    window.APP_PAGE = <?php echo json_encode($boot['page']); ?>;
+    window.APP_CONFIG = <?php echo json_encode($boot); ?>;
   </script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
   <script src="assets/js/api.js" defer></script>

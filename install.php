@@ -104,7 +104,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['install'])) {
                     'free_registration_credits' => max(0, (int) $form['free_registration_credits']),
                     'free_registration_validity_days' => max(1, (int) $form['free_registration_validity_days']),
                     'monthly_plan_price_inr' => max(1, (int) $form['monthly_plan_price_inr']),
-                    'app_name' => 'Jewellery Tag Printer',
+                    'app_name' => 'TagForge',
+                    'app_tagline' => 'Print tags. Run your shop.',
                     'razorpay_key_id' => '',
                     'razorpay_key_secret' => '',
                 );
@@ -129,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['install'])) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Install Jewellery Tag Printer</title>
+  <title>Install TagForge</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body { background: #20313f; min-height: 100vh; }
@@ -145,10 +146,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['install'])) {
     <div class="card shadow install-card mx-auto">
       <div class="card-body p-4 p-md-5">
         <div class="d-flex gap-3 align-items-start mb-4">
-          <span class="brand-mark">JT</span>
+          <span class="brand-mark">TF</span>
           <div>
-            <h1 class="h3 mb-1">Jewellery Tag Printer</h1>
-            <p class="text-secondary mb-0">PHP, MySQL, HTML, CSS, JavaScript, and Bootstrap installer for shared hosting.</p>
+            <h1 class="h3 mb-1">TagForge</h1>
+            <p class="text-secondary mb-0"><strong>Print tags. Run your shop.</strong></p>
+            <p class="text-secondary mb-0 mt-1">PHP, MySQL, HTML, CSS, JavaScript, and Bootstrap installer for shared hosting.</p>
           </div>
         </div>
 

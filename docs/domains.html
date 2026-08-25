@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TagForge — domain setup</title>
+  <style>
+    :root { color-scheme: light; }
+    body { margin: 0; font: 16px/1.55 system-ui, sans-serif; color: #1f2933; background: #f4f1eb; }
+    main { max-width: 840px; margin: 0 auto; padding: 40px 20px 64px; }
+    h1, h2 { letter-spacing: 0; }
+    table { width: 100%; border-collapse: collapse; background: #fff; }
+    th, td { padding: 12px 14px; border: 1px solid #d7dde4; text-align: left; vertical-align: top; }
+    th { background: #20313f; color: #fff; }
+    code, pre { font-family: ui-monospace, Consolas, monospace; }
+    pre { padding: 14px; overflow: auto; background: #20313f; color: #e8edf2; border-radius: 8px; }
+    .card { padding: 20px; border: 1px solid #d7dde4; border-radius: 8px; background: #fff; margin: 18px 0; }
+    a { color: #0f766e; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>TagForge</h1>
+    <p><strong>Print tags. Run your shop.</strong></p>
+    <p>Suggested production hosts for the shared-hosting PHP app. Point every hostname at the <strong>same document root</strong> (this project). Host-based routing in <code>.htaccess</code> and <code>includes/hosts.php</code> selects the surface.</p>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>Purpose</th><th>URL</th><th>Serves</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Shop app</td><td><a href="https://tagforge.in">https://tagforge.in</a></td><td><code>index.php</code></td></tr>
+          <tr><td>Mobile app / PWA entry</td><td><a href="https://app.tagforge.in">https://app.tagforge.in</a></td><td><code>app.php</code> (shop SPA, mobile surface)</td></tr>
+          <tr><td>Admin portal</td><td><a href="https://admin.tagforge.in">https://admin.tagforge.in</a></td><td><code>admin.php</code></td></tr>
+          <tr><td>API</td><td><a href="https://api.tagforge.in">https://api.tagforge.in</a></td><td><code>api.php</code> (CORS + shared session cookie)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>DNS</h2>
+    <div class="card">
+      <pre>tagforge.in          A / ALIAS   → hosting IP
+www.tagforge.in      CNAME      → tagforge.in
+app.tagforge.in      CNAME/A    → same host
+admin.tagforge.in    CNAME/A    → same host
+api.tagforge.in      CNAME/A    → same host</pre>
+      <p>Issue SSL for the apex and all subdomains (AutoSSL / Let’s Encrypt wildcard or multi-domain cert).</p>
+    </div>
+
+    <h2>cPanel / Plesk</h2>
+    <ol>
+      <li>Upload this project to <code>public_html</code> (or the app’s docroot).</li>
+      <li>Add addon / subdomain aliases for <code>app</code>, <code>admin</code>, and <code>api</code> pointing at that <strong>same</strong> folder.</li>
+      <li>Copy <code>includes/config.example.php</code> → <code>includes/config.php</code> and set MySQL + Razorpay secrets.</li>
+      <li>Keep the production <code>hosts</code> / <code>urls</code> / <code>cookie_domain</code> values from the example.</li>
+      <li>Open <code>https://tagforge.in/install.php</code> once, then delete <code>install.php</code>.</li>
+    </ol>
+
+    <h2>Config keys</h2>
+    <div class="card">
+      <pre>'urls' => [
+  'shop'  => 'https://tagforge.in',
+  'admin' => 'https://admin.tagforge.in',
+  'app'   => 'https://app.tagforge.in',
+  'api'   => 'https://api.tagforge.in',
+],
+'hosts' => [
+  'shop'  => ['tagforge.in', 'www.tagforge.in'],
+  'admin' => ['admin.tagforge.in'],
+  'app'   => ['app.tagforge.in'],
+  'api'   => ['api.tagforge.in'],
+],
+'cookie_domain' => '.tagforge.in',</pre>
+    </div>
+
+    <h2>Behaviour</h2>
+    <ul>
+      <li>Shop and mobile UIs call <code>https://api.tagforge.in/api.php</code> when <code>urls.api</code> is set.</li>
+      <li>CORS allows the shop / app / admin origins with credentials.</li>
+      <li>Session cookie is scoped to <code>.tagforge.in</code> so login works across those hosts.</li>
+      <li>Password-reset links always open on the shop URL.</li>
+      <li>Localhost keeps empty <code>hosts</code> so no production redirects fire.</li>
+    </ul>
+
+    <p><a href="../README.md">Back to README</a></p>
+  </main>
+</body>
+</html>
