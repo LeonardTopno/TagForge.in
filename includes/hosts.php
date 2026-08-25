@@ -162,11 +162,18 @@ function session_cookie_domain()
     if ($configured !== '') {
         return $configured;
     }
-    $host = current_http_host();
-    if ($host === '' || $host === 'localhost' || filter_var($host, FILTER_VALIDATE_IP)) {
+    // Only share cookies across subdomains when a cross-host API URL is configured.
+    // Host-only cookies are more reliable for admin.tagforge.in → same-host api.php.
+    $urls = configured_urls();
+    $apiUrl = isset($urls['api']) ? $urls['api'] : '';
+    if ($apiUrl === '') {
         return '';
     }
-    // Share auth cookie across tagforge.in and its subdomains when hosted there.
+    $host = current_http_host();
+    $apiHost = parse_url($apiUrl, PHP_URL_HOST);
+    if (!$host || !$apiHost || strtolower($apiHost) === $host) {
+        return '';
+    }
     if (substr($host, -11) === '.tagforge.in' || $host === 'tagforge.in') {
         return '.tagforge.in';
     }

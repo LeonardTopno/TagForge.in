@@ -19,44 +19,101 @@ function apiCredentials() {
   return cfg.apiCredentials || 'same-origin';
 }
 
-function apiRequest(route, options) {
-  options = options || {};
-  const headers = new Headers(options.headers || {});
-  if (window.CSRF_TOKEN) {
-    headers.set('X-CSRF-Token', window.CSRF_TOKEN);
-  }
-  if (options.body && !(options.body instanceof FormData) && !headers.has('Content-Type')) {
-    headers.set('Content-Type', 'application/json');
-  }
-
-  let url = apiBaseUrl() + '/api.php?r=' + encodeURIComponent(route);
-  if (options.params) {
-    Object.keys(options.params).forEach(function (key) {
-      if (options.params[key] === undefined || options.params[key] === null || options.params[key] === '') return;
-      url += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(options.params[key]);
-    });
-  }
-
-  const fetchOptions = {
+function refreshCsrfToken() {
+  const url = apiBaseUrl() + '/api.php?r=csrf';
+  return fetch(url, {
+    method: 'GET',
     credentials: apiCredentials(),
-    method: options.method || 'GET',
-    headers: headers,
-  };
-  if (options.body) fetchOptions.body = options.body;
-
-  return fetch(url, fetchOptions).then(function (response) {
-    if (response.status === 204) return undefined;
+    headers: { Accept: 'application/json' },
+  }).then(function (response) {
     return response.json().catch(function () {
-      return { detail: 'Request failed' };
+      return {};
     }).then(function (payload) {
       if (!response.ok) {
-        throw new Error((payload && payload.detail) || 'Request failed');
+        throw new Error((payload && payload.detail) || 'Could not refresh security token');
       }
       if (payload && payload.csrf_token) {
         window.CSRF_TOKEN = payload.csrf_token;
       }
-      return payload;
+      return window.CSRF_TOKEN;
     });
+  });
+}
+
+function withCsrfBody(body) {
+  if (!body || body instanceof FormData || !window.CSRF_TOKEN) {
+    return body;
+  }
+  try {
+    const parsed = JSON.parse(body);
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed) && !parsed.csrf_token) {
+      parsed.csrf_token = window.CSRF_TOKEN;
+      return JSON.stringify(parsed);
+    }
+  } catch (err) {
+    // leave body unchanged
+  }
+  return body;
+}
+
+function apiRequest(route, options) {
+  options = options || {};
+  const method = String(options.method || 'GET').toUpperCase();
+  const needsCsrf = method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS';
+
+  function send() {
+    const headers = new Headers(options.headers || {});
+    if (window.CSRF_TOKEN) {
+      headers.set('X-CSRF-Token', window.CSRF_TOKEN);
+    }
+    let body = options.body;
+    if (needsCsrf) {
+      body = withCsrfBody(body);
+    }
+    if (body && !(body instanceof FormData) && !headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json');
+    }
+
+    let url = apiBaseUrl() + '/api.php?r=' + encodeURIComponent(route);
+    if (options.params) {
+      Object.keys(options.params).forEach(function (key) {
+        if (options.params[key] === undefined || options.params[key] === null || options.params[key] === '') return;
+        url += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(options.params[key]);
+      });
+    }
+
+    const fetchOptions = {
+      credentials: apiCredentials(),
+      method: options.method || 'GET',
+      headers: headers,
+    };
+    if (body) fetchOptions.body = body;
+
+    return fetch(url, fetchOptions).then(function (response) {
+      if (response.status === 204) return undefined;
+      return response.json().catch(function () {
+        return { detail: 'Request failed' };
+      }).then(function (payload) {
+        if (!response.ok) {
+          throw new Error((payload && payload.detail) || 'Request failed');
+        }
+        if (payload && payload.csrf_token) {
+          window.CSRF_TOKEN = payload.csrf_token;
+        }
+        return payload;
+      });
+    });
+  }
+
+  if (!needsCsrf) {
+    return send();
+  }
+
+  return refreshCsrfToken().then(send).catch(function (err) {
+    if (String(err && err.message || '').indexOf('Invalid security token') === -1) {
+      throw err;
+    }
+    return refreshCsrfToken().then(send);
   });
 }
 

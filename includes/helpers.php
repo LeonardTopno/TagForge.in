@@ -31,12 +31,17 @@ function json_error($code, $detail)
 
 function request_json()
 {
+    if (array_key_exists('APP_REQUEST_JSON', $GLOBALS)) {
+        return $GLOBALS['APP_REQUEST_JSON'];
+    }
     $raw = file_get_contents('php://input');
     if ($raw === false || $raw === '') {
-        return array();
+        $GLOBALS['APP_REQUEST_JSON'] = array();
+        return $GLOBALS['APP_REQUEST_JSON'];
     }
     $data = json_decode($raw, true);
-    return is_array($data) ? $data : array();
+    $GLOBALS['APP_REQUEST_JSON'] = is_array($data) ? $data : array();
+    return $GLOBALS['APP_REQUEST_JSON'];
 }
 
 function request_method()
@@ -453,19 +458,28 @@ function require_csrf()
     if ($method === 'GET' || $method === 'HEAD' || $method === 'OPTIONS') {
         return;
     }
-    $header = '';
+    $token = '';
     if (isset($_SERVER['HTTP_X_CSRF_TOKEN'])) {
-        $header = $_SERVER['HTTP_X_CSRF_TOKEN'];
+        $token = (string) $_SERVER['HTTP_X_CSRF_TOKEN'];
     } elseif (function_exists('getallheaders')) {
         $headers = getallheaders();
         foreach ($headers as $name => $value) {
             if (strtolower($name) === 'x-csrf-token') {
-                $header = $value;
+                $token = (string) $value;
                 break;
             }
         }
     }
-    if (!$header || !hash_equals(csrf_token(), $header)) {
+    if ($token === '') {
+        $data = request_json();
+        if (!empty($data['csrf_token'])) {
+            $token = (string) $data['csrf_token'];
+        } elseif (!empty($_POST['csrf_token'])) {
+            $token = (string) $_POST['csrf_token'];
+        }
+    }
+    $sessionToken = csrf_token();
+    if ($token === '' || !hash_equals($sessionToken, $token)) {
         json_error(403, 'Invalid security token. Refresh the page and try again.');
     }
 }
