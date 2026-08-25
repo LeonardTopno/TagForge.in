@@ -28,11 +28,30 @@ function dispatch_api($method, $route)
         json_ok(array('status' => 'ok'));
     }
 
+    if ($route === 'version' && $method === 'GET') {
+        json_ok(array(
+            'app' => 'TagForge',
+            'deploy' => '2026-08-26-auth-csrf-fix',
+        ));
+    }
+
     if ($route === 'csrf' && $method === 'GET') {
         json_ok(array('csrf_token' => csrf_token()));
     }
 
-    require_csrf();
+    // Anonymous auth endpoints: CSRF depends on a prior session cookie, which is unreliable
+    // across first visits / subdomain cookie migrations on shared hosting.
+    $csrfExempt = array(
+        'auth/login' => true,
+        'auth/register' => true,
+        'auth/forgot-password' => true,
+        'auth/reset-password' => true,
+    );
+    if ($method === 'POST' && isset($csrfExempt[$route])) {
+        // fall through without require_csrf()
+    } else {
+        require_csrf();
+    }
 
     if ($route === 'auth/register' && $method === 'POST') {
         handle_register();

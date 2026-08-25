@@ -42,12 +42,8 @@
       '<main class="auth-layout admin-auth-layout">' +
         '<section class="auth-panel">' +
           '<div class="auth-heading">' +
-            '<span class="brand-mark">TF</span>' +
-            '<div>' +
-              '<h1>' + escapeHtml(brandName) + '</h1>' +
-              '<p class="brand-tagline">' + escapeHtml(brandTagline) + '</p>' +
-              '<p class="auth-support">Admin portal — billing plans and platform settings.</p>' +
-            '</div>' +
+            '<img class="brand-lockup" src="assets/img/logo.png" alt="' + escapeHtml(brandName) + '">' +
+            '<p class="auth-support">Admin portal — billing plans and platform settings.</p>' +
           '</div>' +
           '<form data-action="admin-login" class="form-grid">' +
             '<label>Admin email<input class="form-control" name="email" type="email" required></label>' +
@@ -147,7 +143,7 @@
     return (
       '<main class="admin-portal-shell">' +
         '<section class="admin-portal-topbar">' +
-          '<div class="brand"><span class="brand-mark">TF</span><div><h1>TagForge Admin</h1><p>' + escapeHtml(state.adminUser.email) + '</p></div></div>' +
+          '<div class="brand"><img class="brand-mark brand-mark-img" src="assets/img/mark.png" alt=""><div><h1>TagForge Admin</h1><p>' + escapeHtml(state.adminUser.email) + '</p></div></div>' +
           '<div class="button-row">' +
             '<a class="btn btn-light" href="' + escapeHtml((window.APP_CONFIG && window.APP_CONFIG.shopUrl) ? window.APP_CONFIG.shopUrl : 'index.php') + '"><i class="bi bi-tag"></i> Shop app</a>' +
             '<button type="button" data-action="logout"><i class="bi bi-box-arrow-right"></i> Sign out</button>' +

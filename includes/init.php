@@ -30,6 +30,20 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
         session_set_cookie_params(60 * 60 * 12, '/; samesite=Lax', $cookieDomain, $secure, true);
     }
     session_name('tagprinter');
+    // Drop legacy shared-domain cookie so host-only sessions can take over.
+    if ($cookieDomain === '' && !empty($_SERVER['HTTP_HOST'])) {
+        $host = strtolower(preg_replace('/:\d+$/', '', (string) $_SERVER['HTTP_HOST']));
+        if ($host === 'tagforge.in' || substr($host, -11) === '.tagforge.in') {
+            setcookie('tagprinter', '', array(
+                'expires' => time() - 42000,
+                'path' => '/',
+                'domain' => '.tagforge.in',
+                'secure' => $secure,
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ));
+        }
+    }
     session_start();
 }
 

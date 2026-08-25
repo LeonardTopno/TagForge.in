@@ -1,0 +1,19 @@
+---
+deployment:
+  tasks:
+    # cPanel runs these with the Git repo as cwd. Use one shell so paths stay consistent.
+    - |
+      DEST=/home4/tagforge/public_html
+      /bin/mkdir -p "$DEST/assets/img" "$DEST/assets/css" "$DEST/assets/js" "$DEST/includes" "$DEST/scripts"
+      /bin/cp -RF assets/. "$DEST/assets/"
+      /bin/cp -RF includes/. "$DEST/includes/"
+      /bin/cp -RF scripts/. "$DEST/scripts/"
+      /bin/cp -f .htaccess "$DEST/.htaccess"
+      /bin/cp -f admin.php "$DEST/admin.php"
+      /bin/cp -f api.php "$DEST/api.php"
+      /bin/cp -f app.php "$DEST/app.php"
+      /bin/cp -f index.php "$DEST/index.php"
+      /bin/cp -f assets/img/favicon.ico "$DEST/favicon.ico"
+      /bin/cp -f assets/img/favicon.png "$DEST/favicon.png"
+      /bin/cp -f api.php "$DEST/api.php"
+      /usr/bin/test -f "$DEST/api.php" && /bin/grep -q "2026-08-26-auth-csrf-fix" "$DEST/api.php"
