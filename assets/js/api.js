@@ -6,6 +6,19 @@ function escapeHtml(value) {
     .replace(/"/g, '&quot;');
 }
 
+function apiBaseUrl() {
+  const cfg = window.APP_CONFIG || {};
+  if (cfg.apiBaseUrl) {
+    return String(cfg.apiBaseUrl).replace(/\/$/, '');
+  }
+  return '';
+}
+
+function apiCredentials() {
+  const cfg = window.APP_CONFIG || {};
+  return cfg.apiCredentials || 'same-origin';
+}
+
 function apiRequest(route, options) {
   options = options || {};
   const headers = new Headers(options.headers || {});
@@ -16,7 +29,7 @@ function apiRequest(route, options) {
     headers.set('Content-Type', 'application/json');
   }
 
-  let url = 'api.php?r=' + encodeURIComponent(route);
+  let url = apiBaseUrl() + '/api.php?r=' + encodeURIComponent(route);
   if (options.params) {
     Object.keys(options.params).forEach(function (key) {
       if (options.params[key] === undefined || options.params[key] === null || options.params[key] === '') return;
@@ -25,7 +38,7 @@ function apiRequest(route, options) {
   }
 
   const fetchOptions = {
-    credentials: 'same-origin',
+    credentials: apiCredentials(),
     method: options.method || 'GET',
     headers: headers,
   };
