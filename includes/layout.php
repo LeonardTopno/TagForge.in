@@ -51,6 +51,34 @@ $barcodeJsVersion = @filemtime($assetRoot . '/js/barcode.js') ?: time();
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <?php echo seo_render_head_tags($seo); ?>
+  <script>document.documentElement.classList.add('js');</script>
+  <style>
+    /* Hide SEO fallback instantly for JS clients; keep HTML for crawlers. */
+    html.js .seo-landing { display: none !important; }
+    .boot-splash { display: none; }
+    html.js:not(.app-ready) .boot-splash {
+      display: grid;
+      place-items: center;
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      margin: 0;
+      background: #20313f;
+      color: #f8fafc;
+      font-family: Inter, ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+      text-align: center;
+      gap: 8px;
+    }
+    html.js:not(.app-ready) .boot-splash strong {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    html.js:not(.app-ready) .boot-splash span {
+      color: #c4b08a;
+      font-size: 0.95rem;
+    }
+  </style>
   <link rel="icon" href="assets/img/favicon.ico<?php echo htmlspecialchars($faviconQuery, ENT_QUOTES, 'UTF-8'); ?>" sizes="any">
   <link rel="icon" type="image/png" href="assets/img/favicon.png<?php echo htmlspecialchars($faviconQuery, ENT_QUOTES, 'UTF-8'); ?>" sizes="32x32">
   <link rel="apple-touch-icon" href="assets/img/favicon.png<?php echo htmlspecialchars($faviconQuery, ENT_QUOTES, 'UTF-8'); ?>">
@@ -62,6 +90,10 @@ $barcodeJsVersion = @filemtime($assetRoot . '/js/barcode.js') ?: time();
   <link rel="stylesheet" href="assets/css/app.css?v=<?php echo (int) $cssVersion; ?>">
 </head>
 <body class="surface-<?php echo htmlspecialchars($pageSurface, ENT_QUOTES, 'UTF-8'); ?>">
+  <div id="boot-splash" class="boot-splash" aria-hidden="true">
+    <strong><?php echo htmlspecialchars(isset($seo['app_name']) ? $seo['app_name'] : 'TagForge', ENT_QUOTES, 'UTF-8'); ?></strong>
+    <span><?php echo htmlspecialchars(isset($seo['tagline']) ? $seo['tagline'] : 'Print tags. Run your shop.', ENT_QUOTES, 'UTF-8'); ?></span>
+  </div>
   <div id="app"><?php
     // Crawlable fallback for public shop landing (replaced by the SPA after boot).
     if (!empty($seo['indexable'])) {
