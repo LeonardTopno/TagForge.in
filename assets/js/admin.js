@@ -76,6 +76,10 @@
   const brandTagline = (window.APP_CONFIG && window.APP_CONFIG.appTagline) || 'Print tags. Run your shop.';
   const shopUrl = (window.APP_CONFIG && window.APP_CONFIG.shopUrl) || 'index.php';
 
+  function setDocumentTitle(part) {
+    document.title = part ? (part + ' · ' + brandName + ' Admin') : (brandName + ' Admin');
+  }
+
   const NAV = [
     { id: 'dashboard', label: 'Dashboard', icon: 'bi-speedometer2' },
     { id: 'tenants', label: 'Tenants', icon: 'bi-shop' },
@@ -800,7 +804,25 @@
   }
 
   function render() {
-    root.innerHTML = state.adminUser ? renderPortal() : renderLogin();
+    if (!state.adminUser) {
+      setDocumentTitle(state.pending2fa ? 'Verify 2FA' : 'Sign in');
+      root.innerHTML = renderLogin();
+      return;
+    }
+    const titles = {
+      dashboard: 'Dashboard',
+      tenants: 'Tenants',
+      'tenant-detail': 'Tenant',
+      purchases: 'Purchases',
+      promos: 'Promos',
+      plans: 'Plans',
+      settings: 'Settings',
+      security: 'Security',
+      ops: 'Ops',
+      admins: 'Admins',
+    };
+    setDocumentTitle(titles[state.view] || 'Admin');
+    root.innerHTML = renderPortal();
   }
 
   function clearFlash() {

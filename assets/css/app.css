@@ -852,6 +852,110 @@ th {
   background: transparent;
 }
 
+/* SEO crawlable landing (replaced by SPA after boot) */
+.seo-landing {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 28px 20px 48px;
+  color: #1f2933;
+}
+
+.seo-landing-hero {
+  margin-bottom: 28px;
+}
+
+.seo-eyebrow {
+  margin: 0 0 8px;
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.seo-landing h1 {
+  margin: 0 0 8px;
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.seo-tagline {
+  margin: 0 0 12px;
+  color: #0f766e;
+  font-size: 1.2rem;
+  font-weight: 650;
+}
+
+.seo-lead {
+  margin: 0 0 18px;
+  max-width: 62ch;
+  color: #52616f;
+  line-height: 1.55;
+}
+
+.seo-cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 0 16px;
+  color: #fff;
+  border-radius: 8px;
+  background: #20313f;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.seo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 24px 0;
+}
+
+.seo-grid article,
+.seo-how {
+  padding: 16px;
+  border: 1px solid #d7dde4;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.seo-grid h2,
+.seo-how h2 {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+}
+
+.seo-grid p,
+.seo-how li,
+.seo-footer {
+  color: #5f6c78;
+  line-height: 1.5;
+}
+
+.seo-how ol {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.seo-footer {
+  margin-top: 24px;
+  font-size: 13px;
+}
+
+.seo-noscript {
+  max-width: 720px;
+  margin: 40px auto;
+  padding: 20px;
+}
+
+@media (max-width: 900px) {
+  .seo-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .admin-auth-layout {
   background: #18242f;
 }
