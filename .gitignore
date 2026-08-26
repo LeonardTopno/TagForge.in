@@ -16,3 +16,5 @@ legacy-fastapi-react/frontend/dist/
 
 .env
 *.log
+tagforge-hotfix-upload.zip
+tmp-hotfix-upload/
