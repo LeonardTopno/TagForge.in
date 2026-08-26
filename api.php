@@ -3,6 +3,7 @@
 require_once __DIR__ . '/includes/init.php';
 
 header('X-Content-Type-Options: nosniff');
+header('X-Robots-Tag: noindex, nofollow');
 apply_cors_headers();
 
 $method = request_method();

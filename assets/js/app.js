@@ -46,6 +46,11 @@
   const brandName = (window.APP_CONFIG && window.APP_CONFIG.appName) || 'TagForge';
   const brandTagline = (window.APP_CONFIG && window.APP_CONFIG.appTagline) || 'Print tags. Run your shop.';
 
+  function setDocumentTitle(part) {
+    const base = brandName + ' — ' + brandTagline;
+    document.title = part ? (part + ' · ' + brandName) : base;
+  }
+
   function brandHeading(supportText) {
     return (
       '<div class="auth-heading">' +
@@ -572,7 +577,13 @@
 
   function render() {
     document.body.classList.toggle('nav-locked', state.navOpen);
-    root.innerHTML = (!state.user || !state.shop) ? renderAuth() : renderApp();
+    if (!state.user || !state.shop) {
+      setDocumentTitle(state.authMode === 'register' ? 'Create shop' : (state.authMode === 'forgot' || state.authMode === 'reset' ? 'Reset password' : 'Sign in'));
+      root.innerHTML = renderAuth();
+      return;
+    }
+    setDocumentTitle(viewTitle());
+    root.innerHTML = renderApp();
   }
 
   function currentSettingsPayload(form) {
