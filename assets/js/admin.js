@@ -676,7 +676,7 @@
           '<article class="entry-panel"><div class="panel-title"><h2>Free pack & defaults</h2></div><div class="form-grid compact">' +
             '<label>Signup credits<input class="form-control" name="free_registration_credits" type="number" value="' + escapeHtml(s.free_registration_credits || '') + '"></label>' +
             '<label>Signup validity days<input class="form-control" name="free_registration_validity_days" type="number" value="' + escapeHtml(s.free_registration_validity_days || '') + '"></label>' +
-            '<label>Default tag width mm<input class="form-control" name="default_tag_width_mm" value="' + escapeHtml(s.default_tag_width_mm || '80.00') + '"></label>' +
+            '<label>Default tag width mm<input class="form-control" name="default_tag_width_mm" value="' + escapeHtml(s.default_tag_width_mm || '64.00') + '"></label>' +
             '<label>Default tag height mm<input class="form-control" name="default_tag_height_mm" value="' + escapeHtml(s.default_tag_height_mm || '18.00') + '"></label>' +
             '<label>Default font pt<input class="form-control" name="default_font_size_pt" value="' + escapeHtml(s.default_font_size_pt || '8.00') + '"></label>' +
           '</div></article>' +

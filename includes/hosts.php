@@ -186,6 +186,27 @@ function redirect_to_url($url, $code = 302)
     exit;
 }
 
+/**
+ * Base URL for same-origin API calls (handles /tagforge.in/ subdirectory on localhost).
+ */
+function request_app_base_url()
+{
+    $host = current_http_host();
+    if ($host === '') {
+        return '';
+    }
+    $scheme = request_is_https() ? 'https' : 'http';
+    $uri = isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '/';
+    $path = parse_url($uri, PHP_URL_PATH);
+    if (!is_string($path) || $path === '') {
+        $path = '/';
+    }
+    // Drop script name: /tagforge.in/index.php -> /tagforge.in
+    $path = preg_replace('#/[^/]+\.php$#', '', $path);
+    $path = rtrim($path, '/');
+    return $scheme . '://' . $host . ($path !== '' ? $path : '');
+}
+
 function enforce_host_role($expectedRole)
 {
     $role = current_host_role();
@@ -223,16 +244,17 @@ function frontend_boot_config($pageScript = 'app.js', $surface = 'shop')
         $apiHost = parse_url($apiBase, PHP_URL_HOST);
         $crossApi = $apiHost && $currentHost && strtolower($apiHost) !== $currentHost;
     }
+    $sameOriginApi = request_app_base_url();
     return array(
         'surface' => $surface,
         'page' => $pageScript === 'admin.js' ? 'admin' : 'shop',
         'appName' => app_config('app_name', 'TagForge'),
         'appTagline' => app_config('app_tagline', 'Print tags. Run your shop.'),
         'appVersion' => function_exists('app_version') ? app_version() : '0.0.0',
-        'shopUrl' => $urls['shop'] !== '' ? $urls['shop'] : '',
-        'adminUrl' => $urls['admin'] !== '' ? $urls['admin'] : '',
-        'appUrl' => $urls['app'] !== '' ? $urls['app'] : '',
-        'apiBaseUrl' => $crossApi ? rtrim($apiBase, '/') : '',
+        'shopUrl' => $urls['shop'] !== '' ? $urls['shop'] : $sameOriginApi,
+        'adminUrl' => $urls['admin'] !== '' ? $urls['admin'] : $sameOriginApi,
+        'appUrl' => $urls['app'] !== '' ? $urls['app'] : $sameOriginApi,
+        'apiBaseUrl' => $crossApi ? rtrim($apiBase, '/') : $sameOriginApi,
         'apiCredentials' => $crossApi ? 'include' : 'same-origin',
     );
 }

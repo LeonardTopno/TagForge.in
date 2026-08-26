@@ -194,7 +194,7 @@ docs/                 application, technical, and progress HTML</pre>
       <li>Shop logo is uploaded as <code>multipart/form-data</code>. The API returns <code>logo_url</code> (<code>/uploads/logos/{shop_id}.ext</code>). The sidebar shows it; the hang tag does not.</li>
       <li>Path <code>admin.php</code> loads the admin shell.</li>
       <li>Preview sizes one hang-tag face from shop millimetre fields. Code 128 barcode in <code>assets/js/barcode.js</code>.</li>
-      <li>Print uses CSS <code>@media print</code> — one page (<code>@page { size: 80mm 18mm }</code>). Print rules hide navigation chrome and keep tag colours with <code>print-color-adjust</code>.</li>
+      <li>Print uses CSS <code>@media print</code> — one page (<code>@page { size: 64mm 18mm }</code>). Print rules hide navigation chrome and keep tag colours with <code>print-color-adjust</code>.</li>
       <li><code>assets/js/api.js</code> wraps fetch to <code>api.php</code> on the same origin.</li>
     </ul>
 
@@ -259,15 +259,15 @@ docs/                 application, technical, and progress HTML</pre>
         <tr><td>Tail</td><td>~15–22 mm long</td><td>Not printed</td></tr>
       </tbody>
     </table>
-    <p><strong>Suggested Tag Settings defaults:</strong> <code>tag_width_mm</code> = 80, <code>tag_height_mm</code> = 18 (shop model default), <code>font_size_pt</code> = 7–8, offsets = 0 then tune on test print. Barcode target height in CSS: ~4.5–6 mm at 203 DPI.</p>
+    <p><strong>Suggested Tag Settings defaults:</strong> <code>tag_width_mm</code> = 64, <code>tag_height_mm</code> = 18 (shop model default), <code>font_size_pt</code> = 7–8, offsets = 0 then tune on test print. Barcode target height in CSS: ~4.5–6 mm at 203 DPI.</p>
 
     <h3>Mapping to frontend layout</h3>
     <p><code>printableTagHtml</code> in <code>assets/js/app.js</code> renders a horizontal barbell strip with a single printable face:</p>
 <pre>print-tag grid:  [ tag-printable-face ] | tag-neck (2.5mm) | tag-tail (18mm)
 
 tag-printable-face grid:  tag-panel-left (weights) | tag-fold-mark | tag-panel-right (item + barcode)</pre>
-    <p>On an 80 mm-wide tag, the printable face occupies the left portion; neck and tail are structural (not printed). Weights and barcode share one printed side; the user folds on <code>.tag-fold-mark</code>. Item label uses category + item name (e.g. “Gold Ring”).</p>
-    <p>Print CSS uses <code>@page { size: 80mm 18mm }</code>. Per-shop <code>tag_width_mm</code> and <code>tag_height_mm</code> drive the on-screen preview; <code>@page</code> is not yet dynamic — calibration should account for this until print CSS follows shop settings.</p>
+    <p>Printable face is <strong>64 mm</strong> wide with fold at <strong>32 mm</strong>. Neck and tail are structural (preview guides only, not printed). Weights on the left panel; item, purity, and logo on the right. Fold on <code>.tag-fold-mark</code>.</p>
+    <p>Print CSS uses <code>@page { size: 64mm 18mm }</code> as fallback; per-shop <code>tag_width_mm</code> and <code>tag_height_mm</code> drive preview and dynamic print page size via JavaScript.</p>
 
     <h3>Counter PC / driver settings</h3>
     <ul>

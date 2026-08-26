@@ -536,8 +536,8 @@ label {
   padding: 0;
   overflow: hidden;
   color: #111827;
-  font-family: "Arial Narrow", Arial, sans-serif;
-  line-height: 1;
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.2;
   background: transparent;
 }
 
@@ -550,8 +550,8 @@ label {
   min-width: 0;
   height: 100%;
   overflow: hidden;
-  border: 1px solid #111827;
-  border-radius: 1.5mm 0 0 1.5mm;
+  border: none;
+  border-radius: 0;
   background: #ffffff;
 }
 
@@ -561,16 +561,18 @@ label {
   justify-items: center;
   min-width: 0;
   height: 100%;
-  padding: 0.8mm 1mm;
+  padding: 0.35mm 0.8mm;
   overflow: hidden;
 }
 
 .tag-panel-left {
-  padding-right: 2.8mm;
+  padding-right: 1mm;
+  justify-items: start;
 }
 
 .tag-panel-right {
-  padding-left: 2.8mm;
+  padding-left: 1.8mm;
+  padding-right: 1.2mm;
 }
 
 .tag-fold-mark {
@@ -578,17 +580,7 @@ label {
   height: 100%;
   align-self: stretch;
   margin: 0;
-  border-left: 0.35mm dashed #111827;
-}
-
-.tag-neck {
-  flex: 0 0 2.5mm;
-  width: 2.5mm;
-  height: 50%;
-  align-self: center;
-  border-top: 1px solid #111827;
-  border-bottom: 1px solid #111827;
-  background: #ffffff;
+  border-left: none;
 }
 
 .tag-tail {
@@ -596,10 +588,27 @@ label {
   width: 18mm;
   height: 36%;
   align-self: center;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* Actual Preview only — face + tail guide (not printed). */
+.tag-stage .print-tag .tag-printable-face {
+  border: 1px solid #111827;
+  border-radius: 1mm 0 0 1mm;
+}
+
+.tag-stage .print-tag .tag-fold-mark {
+  border-left: 0.35mm dashed #111827;
+}
+
+.tag-stage .print-tag .tag-tail {
   border-top: 1px solid #111827;
   border-bottom: 1px solid #111827;
   border-right: 1px solid #111827;
-  border-radius: 0 1mm 1mm 0;
+  border-left: none;
+  border-radius: 0 2.5mm 2.5mm 0;
   background: #ffffff;
 }
 
@@ -607,38 +616,41 @@ label {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   width: 100%;
   max-width: 100%;
   height: 100%;
   min-height: 0;
-  gap: 0.3mm;
+  gap: 0.55mm;
+  padding: 0.5mm 0.3mm;
+  box-sizing: border-box;
 }
 
 .tag-back-item,
 .tag-back-number {
+  flex: 0 0 auto;
   max-width: 100%;
   overflow: hidden;
-  font-size: 6pt;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  line-height: 1;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 5.5pt;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1.15;
   text-align: center;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
 .tag-back-purity {
-  flex: 1 1 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  flex: 0 0 auto;
+  display: block;
   max-width: 100%;
   overflow: hidden;
-  font-size: 7pt;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  line-height: 1;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 6pt;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
   text-align: center;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -646,37 +658,57 @@ label {
 
 .tag-back-logo {
   flex: 0 0 auto;
-  max-width: 100%;
-  max-height: 5.5mm;
+  max-width: 88%;
+  max-height: 4mm;
   width: auto;
   height: auto;
   object-fit: contain;
+  margin-top: 0.15mm;
 }
 
 .purity-input {
   text-transform: uppercase;
 }
 
+.tag-stage .print-tag,
+.tag-stage .print-tag .tag-printable-face,
+.tag-stage .print-tag .tag-panel-left {
+  overflow: visible;
+}
+
 .tag-weight-grid {
   display: grid;
-  grid-template-columns: auto 2.2mm minmax(8mm, 1fr);
-  align-items: baseline;
+  grid-template-columns: minmax(9.5mm, 1.15fr) minmax(6.5mm, 1fr);
+  align-items: center;
   column-gap: 0.5mm;
-  row-gap: 0.5mm;
+  row-gap: 0.2mm;
   width: 100%;
   max-width: 100%;
-  font-weight: 800;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums lining-nums;
   letter-spacing: 0;
+  font-size: 0.92em;
+  line-height: 1.25;
 }
 
-.tag-weight-grid span,
-.tag-weight-grid strong {
+.tag-weight-label {
+  overflow: visible;
+  white-space: nowrap;
+  font-family: inherit;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.tag-weight-value {
   overflow: hidden;
   white-space: nowrap;
-}
-
-.tag-weight-grid strong {
+  text-overflow: clip;
   text-align: right;
+  font-family: inherit;
+  font-weight: 700;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums lining-nums;
 }
 
 .table-panel {
@@ -1791,7 +1823,7 @@ th {
 
 @media print {
   @page {
-    size: 80mm 18mm;
+    size: 64mm 18mm;
     margin: 0;
   }
 
@@ -1801,7 +1833,7 @@ th {
 
   html,
   body {
-    width: 80mm !important;
+    width: 64mm !important;
     height: 18mm !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -1816,6 +1848,9 @@ th {
   #print-root,
   #print-root * {
     display: revert !important;
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
   }
 
   #print-root {
@@ -1823,23 +1858,23 @@ th {
     position: absolute !important;
     left: 0 !important;
     top: 0 !important;
-    width: 80mm !important;
+    width: 64mm !important;
     height: 18mm !important;
     margin: 0 !important;
     padding: 0 !important;
-    border: 0 !important;
     background: transparent !important;
     overflow: hidden !important;
   }
 
   #print-root .print-tag {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
+    display: block !important;
     position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
     margin: 0 !important;
-    box-shadow: none !important;
     overflow: hidden !important;
+    border-radius: 1mm !important;
+    background: #ffffff !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
     color-adjust: exact;
@@ -1851,35 +1886,43 @@ th {
 
   #print-root .tag-printable-face {
     display: grid !important;
-    align-self: stretch !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    width: 100% !important;
     height: 100% !important;
+    border-radius: 1mm !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
   }
 
-  #print-root .tag-fold-mark {
-    display: block !important;
-    height: 100% !important;
-    align-self: stretch !important;
+  #print-root .tag-fold-mark,
+  #print-root .tag-tail {
+    display: none !important;
   }
 
-  #print-root .tag-panel,
   #print-root .tag-weight-grid {
     display: grid !important;
+    line-height: 1.25 !important;
+    row-gap: 0.2mm !important;
+  }
+
+  #print-root .tag-weight-label,
+  #print-root .tag-weight-value {
+    line-height: 1.25 !important;
+  }
+
+  #print-root .tag-panel {
+    display: grid !important;
+    padding: 0.35mm 0.8mm !important;
   }
 
   #print-root .tag-back {
     display: flex !important;
   }
 
-  #print-root .tag-neck,
-  #print-root .tag-tail {
-    display: block !important;
-    align-self: center !important;
-  }
-
   #print-root .tag-back-logo {
     display: block !important;
-    max-width: 100%;
-    max-height: 7mm;
+    max-width: 88%;
+    max-height: 4mm;
     object-fit: contain;
   }
 }

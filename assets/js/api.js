@@ -11,7 +11,10 @@ function apiBaseUrl() {
   if (cfg.apiBaseUrl) {
     return String(cfg.apiBaseUrl).replace(/\/$/, '');
   }
-  return '';
+  // Fallback: same-origin app in a subdirectory (e.g. localhost/tagforge.in/).
+  const path = window.location.pathname || '/';
+  const dir = path.replace(/\/[^/]*$/, '') || '';
+  return window.location.origin + dir;
 }
 
 function apiCredentials() {

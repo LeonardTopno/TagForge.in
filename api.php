@@ -277,7 +277,7 @@ function handle_register()
         ? free_pack_days()
         : max(1, (int) app_config('free_registration_validity_days', 2));
     $creditsExpireAt = gmdate('Y-m-d H:i:s', time() + ($freeDays * 86400));
-    $width = function_exists('platform_setting') ? platform_setting('default_tag_width_mm', '80.00') : '80.00';
+    $width = function_exists('platform_setting') ? platform_setting('default_tag_width_mm', '64.00') : '64.00';
     $height = function_exists('platform_setting') ? platform_setting('default_tag_height_mm', '18.00') : '18.00';
     $font = function_exists('platform_setting') ? platform_setting('default_font_size_pt', '8.00') : '8.00';
     $pdo = db();

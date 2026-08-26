@@ -45,7 +45,7 @@ function seo_defaults_for_surface($surface)
     $surface = (string) $surface;
 
     $sharedDescription = 'TagForge is jewellery hang-tag software for Indian jewellery shops. '
-        . 'Create barcode tags, print on TVS LP 46 NEO (80×18 mm), manage credits, and run your shop from the browser.';
+        . 'Create barcode tags, print on TVS LP 46 NEO (64×18 mm), manage credits, and run your shop from the browser.';
 
     if ($surface === 'admin') {
         return array(
@@ -158,7 +158,7 @@ function seo_json_ld($meta)
         ),
         'featureList' => array(
             'Jewellery hang-tag creation with barcode',
-            'Browser printing for TVS LP 46 NEO (80×18 mm)',
+            'Browser printing for TVS LP 46 NEO (64×18 mm)',
             'Shop settings, logo, GST, and item catalog',
             'Credits and monthly unlimited billing',
             'Multi-tenant shop accounts',
@@ -257,7 +257,7 @@ function seo_crawlable_landing_html($meta)
     <div class="seo-grid">
       <article>
         <h2>Print-ready hang tags</h2>
-        <p>Design 80×18 mm barbell tags with item name, purity, weights, pieces, and barcode. Tune millimetre size and offsets for your printer.</p>
+        <p>Design 64×18 mm barbell tags with item name, purity, weights, and shop logo. Fold at 32 mm. Tune millimetre size and offsets for your printer.</p>
       </article>
       <article>
         <h2>Run your jewellery shop</h2>

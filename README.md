@@ -75,15 +75,14 @@ Printing uses the **browser print dialog** on the counter PC or tablet where the
 
 ### Tag size (reference: Bin Ismail Gold)
 
-| Dimension | Measured / estimated |
+| Dimension | Measured |
 | --- | --- |
-| Total tag width (face + neck + tail) | ~72–80 mm |
-| Tag height | ~15–18 mm (app default **18 mm**) |
-| Printable face | ~50–55 mm × ~15–18 mm |
-| Neck / bridge | ~3–5 mm (not printed) |
-| Tail | ~15–22 mm (not printed) |
+| Printable length (face) | **64 mm** (6.4 cm) |
+| Fold line | **32 mm** (3.2 cm) — centre |
+| Tag height | **18 mm** (app default) |
+| Neck / tail | Structural on die-cut; not printed |
 
-**Suggested starting values in Tag Settings:** width **80 mm**, height **18 mm**, font **7–8 pt**. Adjust X/Y offsets after a test print until preview and physical tag match.
+**Suggested starting values in Tag Settings:** width **64 mm**, height **18 mm**, font **7–8 pt**. Adjust X/Y offsets after a test print until preview and physical tag match.
 
 ## Print preview layout
 
