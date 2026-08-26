@@ -478,9 +478,14 @@ function as_utc_ts($value)
 function touch_shop_activity($shopId)
 {
     try {
+        if (!function_exists('db_exec') || !function_exists('now_utc')) {
+            return;
+        }
         db_exec('UPDATE shops SET last_active_at = ? WHERE id = ?', array(now_utc(), (int) $shopId));
     } catch (Exception $e) {
         // Column may not exist on very old installs before migrate runs.
+    } catch (Throwable $e) {
+        // ignore
     }
 }
 
@@ -763,11 +768,23 @@ function auth_payload($user, $shop)
 
 function login_user($user)
 {
-    session_regenerate_id(true);
+    try {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_regenerate_id(true);
+        }
+    } catch (Exception $e) {
+        // continue with existing session id
+    } catch (Throwable $e) {
+        // continue
+    }
     $_SESSION['user_id'] = (int) $user['id'];
-    clear_support_view();
-    csrf_token();
-    if ($user['role'] !== 'admin') {
+    if (function_exists('clear_support_view')) {
+        clear_support_view();
+    }
+    if (function_exists('csrf_token')) {
+        csrf_token();
+    }
+    if (isset($user['role']) && $user['role'] !== 'admin' && function_exists('touch_shop_activity')) {
         touch_shop_activity($user['shop_id']);
     }
 }
