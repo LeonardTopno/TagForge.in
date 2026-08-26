@@ -146,7 +146,7 @@
   }
 
   function printableTagHtml(tag, shop) {
-    const width = shop.tag_width_mm || 80;
+    const width = shop.tag_width_mm || 64;
     const height = shop.tag_height_mm || 18;
     const x = Number(shop.horizontal_offset_mm) || 0;
     const y = Number(shop.vertical_offset_mm) || 0;
@@ -164,9 +164,9 @@
         '<div class="tag-printable-face">' +
           '<div class="tag-panel tag-panel-left" aria-label="Left panel: weights">' +
             '<div class="tag-weight-grid">' +
-              '<span>Grs.Wt</span><span>:</span><strong>' + formatWeight(tag.gross_weight) + '</strong>' +
-              '<span>Stn.Wt</span><span>:</span><strong>' + formatWeight(tag.stone_weight) + '</strong>' +
-              '<span>Nt.Wt</span><span>:</span><strong>' + formatWeight(tag.net_weight) + '</strong>' +
+              '<span class="tag-weight-label">Grs.Wt:</span><strong class="tag-weight-value">' + formatWeight(tag.gross_weight) + '</strong>' +
+              '<span class="tag-weight-label">Stn.Wt:</span><strong class="tag-weight-value">' + formatWeight(tag.stone_weight) + '</strong>' +
+              '<span class="tag-weight-label">Nt.Wt:</span><strong class="tag-weight-value">' + formatWeight(tag.net_weight) + '</strong>' +
             '</div>' +
           '</div>' +
           '<div class="tag-fold-mark" aria-hidden="true" title="Fold line"></div>' +
@@ -178,7 +178,6 @@
             '</div>' +
           '</div>' +
         '</div>' +
-        '<div class="tag-neck" aria-hidden="true"></div>' +
         '<div class="tag-tail" aria-hidden="true"></div>' +
       '</article>'
     );
@@ -635,7 +634,7 @@
   }
 
   function ensurePrintPageSize(shop) {
-    const width = shop && shop.tag_width_mm ? shop.tag_width_mm : '80';
+    const width = shop && shop.tag_width_mm ? shop.tag_width_mm : '64';
     const height = shop && shop.tag_height_mm ? shop.tag_height_mm : '18';
     let styleEl = document.getElementById('print-page-size');
     if (!styleEl) {
@@ -647,7 +646,8 @@
       '@media print {' +
         '@page { size: ' + width + 'mm ' + height + 'mm; margin: 0; }' +
         'html, body, #print-root { width: ' + width + 'mm !important; height: ' + height + 'mm !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; }' +
-        '#print-root .print-tag { width: ' + width + 'mm !important; height: ' + height + 'mm !important; }' +
+        '#print-root .print-tag { width: ' + width + 'mm !important; height: ' + height + 'mm !important; border-radius: 1mm !important; overflow: hidden !important; background: #ffffff !important; }' +
+        '#print-root .tag-printable-face { border-radius: 1mm !important; overflow: hidden !important; background: #ffffff !important; }' +
       '}';
   }
 

@@ -130,7 +130,7 @@ function default_platform_settings()
     return array(
         'free_registration_credits' => (string) (int) app_config('free_registration_credits', 20),
         'free_registration_validity_days' => (string) max(1, (int) app_config('free_registration_validity_days', 2)),
-        'default_tag_width_mm' => '80.00',
+        'default_tag_width_mm' => '64.00',
         'default_tag_height_mm' => '18.00',
         'default_font_size_pt' => '8.00',
         'announcement_enabled' => '0',

@@ -40,7 +40,7 @@ function install_schema(PDO $pdo)
             short_name VARCHAR(40) NOT NULL,
             tag_prefix VARCHAR(12) NOT NULL DEFAULT 'T',
             next_tag_number INT NOT NULL DEFAULT 1,
-            tag_width_mm DECIMAL(6,2) NOT NULL DEFAULT 80.00,
+            tag_width_mm DECIMAL(6,2) NOT NULL DEFAULT 64.00,
             tag_height_mm DECIMAL(6,2) NOT NULL DEFAULT 18.00,
             font_size_pt DECIMAL(5,2) NOT NULL DEFAULT 8.00,
             horizontal_offset_mm DECIMAL(6,2) NOT NULL DEFAULT 0.00,
@@ -303,6 +303,32 @@ function ensure_admin_platform_schema($pdo = null)
             CONSTRAINT fk_support_view_target FOREIGN KEY (target_user_id) REFERENCES users (id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     );
+
+    sync_measured_tag_defaults($pdo);
+}
+
+/**
+ * Align platform + shop tag width to measured Bin Ismail roll (64 mm printable, fold at 32 mm).
+ */
+function sync_measured_tag_defaults($pdo = null)
+{
+    static $done = false;
+    if ($done) {
+        return;
+    }
+    $pdo = $pdo ?: db();
+    try {
+        $pdo->exec(
+            "UPDATE platform_settings SET setting_value = '64.00'
+             WHERE setting_key = 'default_tag_width_mm' AND setting_value IN ('80.00', '80')"
+        );
+        $pdo->exec(
+            'UPDATE shops SET tag_width_mm = 64.00 WHERE tag_width_mm IN (80.00, 80)'
+        );
+    } catch (Exception $e) {
+        // Non-fatal dimension sync.
+    }
+    $done = true;
 }
 
 function seed_billing_plans(PDO $pdo)
