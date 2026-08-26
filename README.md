@@ -17,6 +17,7 @@ The previous FastAPI + React + PostgreSQL/SQLite stack is kept in [`legacy-fasta
 | Name | **TagForge** |
 | Tagline | **Print tags. Run your shop.** |
 | Domain | [tagforge.in](https://tagforge.in) |
+| Version | **1.0.0** |
 
 ## Production domains
 

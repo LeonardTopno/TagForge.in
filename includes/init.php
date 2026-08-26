@@ -11,6 +11,7 @@ if (!is_file($configFile)) {
 
 $GLOBALS['APP_CONFIG'] = require $configFile;
 
+require_once __DIR__ . '/version.php';
 require_once __DIR__ . '/hosts.php';
 
 if (session_status() !== PHP_SESSION_ACTIVE) {

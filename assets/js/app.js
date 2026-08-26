@@ -110,7 +110,9 @@
   }
 
   function companyFooter() {
-    return '<footer class="app-footer">Migids Software LLP, Bengaluru</footer>';
+    const ver = (window.APP_CONFIG && window.APP_CONFIG.appVersion) || '';
+    const suffix = ver ? ' · v' + escapeHtml(ver) : '';
+    return '<footer class="app-footer">Migids Software LLP, Bengaluru' + suffix + '</footer>';
   }
 
   function draftTag() {

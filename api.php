@@ -103,6 +103,7 @@ function dispatch_api($method, $route)
     if ($route === 'version' && $method === 'GET') {
         json_ok(array(
             'app' => 'TagForge',
+            'version' => function_exists('app_version') ? app_version() : '0.0.0',
             'deploy' => '2026-08-27-schema-column-check',
             'platform' => function_exists('platform_public_payload'),
             'assert_shop' => function_exists('assert_shop_not_suspended'),

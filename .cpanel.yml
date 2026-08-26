@@ -10,6 +10,7 @@ deployment:
       # 1) Critical API surface first (version marker + login path).
       /bin/cp -f api.php "$DEST/api.php"
       /bin/cp -f includes/init.php "$DEST/includes/init.php"
+      /bin/cp -f includes/version.php "$DEST/includes/version.php"
       /bin/cp -f includes/helpers.php "$DEST/includes/helpers.php"
       /bin/cp -f includes/db.php "$DEST/includes/db.php"
       /bin/cp -f includes/hosts.php "$DEST/includes/hosts.php"
