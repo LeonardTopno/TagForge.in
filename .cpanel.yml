@@ -31,15 +31,20 @@ deployment:
       /bin/cp -f app.php "$DEST/app.php"
       /bin/cp -f index.php "$DEST/index.php"
       /bin/cp -f api.php "$DEST/api.php"
+      if /usr/bin/test -f robots.php; then /bin/cp -f robots.php "$DEST/robots.php"; fi
+      if /usr/bin/test -f sitemap.php; then /bin/cp -f sitemap.php "$DEST/sitemap.php"; fi
+      if /usr/bin/test -f manifest.webmanifest; then /bin/cp -f manifest.webmanifest "$DEST/manifest.webmanifest"; fi
       /bin/cp -f assets/img/favicon.ico "$DEST/favicon.ico" || true
       /bin/cp -f assets/img/favicon.png "$DEST/favicon.png" || true
 
-      /bin/touch "$DEST/api.php" "$DEST/includes/helpers.php" "$DEST/includes/platform.php" "$DEST/includes/auth_guards.php" "$DEST/includes/init.php" || true
+      /bin/touch "$DEST/api.php" "$DEST/includes/helpers.php" "$DEST/includes/platform.php" "$DEST/includes/auth_guards.php" "$DEST/includes/init.php" "$DEST/includes/schema.php" || true
 
       echo "=== TagForge deploy verification ==="
-      /bin/grep -n "2026-08-26-cpanel-force" "$DEST/api.php" || { echo "ERROR: api.php missing new deploy marker" >&2; exit 1; }
+      /bin/grep -n "2026-08-27-schema-column-check" "$DEST/api.php" || { echo "ERROR: api.php missing new deploy marker" >&2; exit 1; }
       /usr/bin/test -f "$DEST/includes/platform.php" || { echo "ERROR: platform.php missing in DEST" >&2; exit 1; }
       /usr/bin/test -f "$DEST/includes/auth_guards.php" || { echo "ERROR: auth_guards.php missing in DEST" >&2; exit 1; }
+      /usr/bin/test -f "$DEST/includes/schema.php" || { echo "ERROR: schema.php missing in DEST" >&2; exit 1; }
+      /bin/grep -q "information_schema.COLUMNS" "$DEST/includes/schema.php" || { echo "ERROR: schema.php missing column-check fix" >&2; exit 1; }
       /bin/grep -q "function assert_shop_not_suspended" "$DEST/includes/auth_guards.php" || { echo "ERROR: auth_guards polyfill missing assert" >&2; exit 1; }
-      /bin/ls -la "$DEST/api.php" "$DEST/includes/platform.php" "$DEST/includes/auth_guards.php" "$DEST/includes/helpers.php"
-      echo "TagForge deploy OK: cpanel-force"
+      /bin/ls -la "$DEST/api.php" "$DEST/includes/platform.php" "$DEST/includes/auth_guards.php" "$DEST/includes/helpers.php" "$DEST/includes/schema.php"
+      echo "TagForge deploy OK: schema-column-check"

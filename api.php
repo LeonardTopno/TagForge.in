@@ -103,7 +103,7 @@ function dispatch_api($method, $route)
     if ($route === 'version' && $method === 'GET') {
         json_ok(array(
             'app' => 'TagForge',
-            'deploy' => '2026-08-26-cpanel-force',
+            'deploy' => '2026-08-27-schema-column-check',
             'platform' => function_exists('platform_public_payload'),
             'assert_shop' => function_exists('assert_shop_not_suspended'),
             'auth_guards' => is_file(__DIR__ . '/includes/auth_guards.php'),

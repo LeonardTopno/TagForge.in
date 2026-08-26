@@ -224,8 +224,14 @@ function ensure_password_reset_schema($pdo = null)
 
 function table_has_column(PDO $pdo, $table, $column)
 {
-    $stmt = $pdo->prepare('SHOW COLUMNS FROM `' . str_replace('`', '``', $table) . '` LIKE ?');
-    $stmt->execute(array($column));
+    // MySQL rejects placeholders in SHOW COLUMNS with native prepares
+    // (PDO::ATTR_EMULATE_PREPARES = false). Use information_schema instead.
+    $stmt = $pdo->prepare(
+        'SELECT 1 FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?
+         LIMIT 1'
+    );
+    $stmt->execute(array($table, $column));
     return (bool) $stmt->fetch(PDO::FETCH_ASSOC);
 }
 

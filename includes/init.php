@@ -58,8 +58,18 @@ require_once __DIR__ . '/ops_api.php';
 
 csrf_token();
 ensure_upload_dirs();
-ensure_password_reset_schema();
-ensure_admin_platform_schema();
+try {
+    ensure_password_reset_schema();
+} catch (Exception $e) {
+    // Password-reset table must not block the whole app.
+} catch (Throwable $e) {
+}
+try {
+    ensure_admin_platform_schema();
+} catch (Exception $e) {
+    // Platform column/table migrate must not take down shop/API.
+} catch (Throwable $e) {
+}
 try {
     ensure_ops_schema();
     sync_billing_plans();
