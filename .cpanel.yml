@@ -1,44 +1,45 @@
 ---
 deployment:
   tasks:
-    # cPanel runs these with the Git repo as cwd. Use one shell so paths stay consistent.
+    # cPanel runs these with the Git repo as cwd. Copy critical PHP first so a later
+    # failure cannot leave public_html on a stale api.php the way set -e did.
     - |
       DEST=/home4/tagforge/public_html
-      set -e
       /bin/mkdir -p "$DEST/assets/img" "$DEST/assets/css" "$DEST/assets/js" "$DEST/includes" "$DEST/scripts"
-      # Fail early if critical source files are missing from the repo checkout.
-      for f in api.php includes/init.php includes/helpers.php includes/platform.php includes/auth_guards.php includes/ops_api.php includes/admin_api.php; do
-        /usr/bin/test -f "$f" || { echo "MISSING SOURCE: $f" >&2; exit 1; }
-      done
-      /bin/cp -RF assets/. "$DEST/assets/"
-      /bin/cp -RF includes/. "$DEST/includes/"
-      /bin/cp -RF scripts/. "$DEST/scripts/"
-      # Explicit copies so a stale includes/ tree cannot hide new auth files.
+
+      # 1) Critical API surface first (version marker + login path).
+      /bin/cp -f api.php "$DEST/api.php"
       /bin/cp -f includes/init.php "$DEST/includes/init.php"
       /bin/cp -f includes/helpers.php "$DEST/includes/helpers.php"
+      /bin/cp -f includes/db.php "$DEST/includes/db.php"
+      /bin/cp -f includes/hosts.php "$DEST/includes/hosts.php"
+      /bin/cp -f includes/schema.php "$DEST/includes/schema.php"
+      /bin/cp -f includes/mail.php "$DEST/includes/mail.php"
+      /bin/cp -f includes/razorpay.php "$DEST/includes/razorpay.php"
       /bin/cp -f includes/platform.php "$DEST/includes/platform.php"
       /bin/cp -f includes/auth_guards.php "$DEST/includes/auth_guards.php"
       /bin/cp -f includes/ops_api.php "$DEST/includes/ops_api.php"
       /bin/cp -f includes/admin_api.php "$DEST/includes/admin_api.php"
-      /bin/cp -f includes/schema.php "$DEST/includes/schema.php"
-      /bin/cp -f includes/hosts.php "$DEST/includes/hosts.php"
-      /bin/cp -f includes/db.php "$DEST/includes/db.php"
-      /bin/cp -f includes/mail.php "$DEST/includes/mail.php"
-      /bin/cp -f includes/razorpay.php "$DEST/includes/razorpay.php"
-      /bin/cp -f .htaccess "$DEST/.htaccess"
+      if /usr/bin/test -f includes/seo.php; then /bin/cp -f includes/seo.php "$DEST/includes/seo.php"; fi
+      if /usr/bin/test -f includes/layout.php; then /bin/cp -f includes/layout.php "$DEST/includes/layout.php"; fi
+
+      # 2) Rest of tree (do not abort deploy if a non-critical asset copy warns).
+      /bin/cp -RF assets/. "$DEST/assets/" || true
+      /bin/cp -RF scripts/. "$DEST/scripts/" || true
+      /bin/cp -f .htaccess "$DEST/.htaccess" || true
       /bin/cp -f admin.php "$DEST/admin.php"
-      /bin/cp -f api.php "$DEST/api.php"
       /bin/cp -f app.php "$DEST/app.php"
       /bin/cp -f index.php "$DEST/index.php"
-      /bin/cp -f assets/img/favicon.ico "$DEST/favicon.ico"
-      /bin/cp -f assets/img/favicon.png "$DEST/favicon.png"
-      # Bust OPcache-ish file stats on shared hosts.
-      /bin/touch "$DEST/api.php" "$DEST/includes/helpers.php" "$DEST/includes/platform.php" "$DEST/includes/auth_guards.php" "$DEST/includes/init.php"
-      /usr/bin/test -f "$DEST/api.php"
-      /bin/grep -q "2026-08-26-auth-guards" "$DEST/api.php"
-      /usr/bin/test -f "$DEST/includes/platform.php"
-      /usr/bin/test -f "$DEST/includes/auth_guards.php"
-      /usr/bin/test -f "$DEST/includes/ops_api.php"
-      /bin/grep -q "function assert_shop_not_suspended" "$DEST/includes/helpers.php"
-      /bin/grep -q "function assert_shop_not_suspended" "$DEST/includes/auth_guards.php"
-      echo "TagForge deploy OK: auth-guards"
+      /bin/cp -f api.php "$DEST/api.php"
+      /bin/cp -f assets/img/favicon.ico "$DEST/favicon.ico" || true
+      /bin/cp -f assets/img/favicon.png "$DEST/favicon.png" || true
+
+      /bin/touch "$DEST/api.php" "$DEST/includes/helpers.php" "$DEST/includes/platform.php" "$DEST/includes/auth_guards.php" "$DEST/includes/init.php" || true
+
+      echo "=== TagForge deploy verification ==="
+      /bin/grep -n "2026-08-26-cpanel-force" "$DEST/api.php" || { echo "ERROR: api.php missing new deploy marker" >&2; exit 1; }
+      /usr/bin/test -f "$DEST/includes/platform.php" || { echo "ERROR: platform.php missing in DEST" >&2; exit 1; }
+      /usr/bin/test -f "$DEST/includes/auth_guards.php" || { echo "ERROR: auth_guards.php missing in DEST" >&2; exit 1; }
+      /bin/grep -q "function assert_shop_not_suspended" "$DEST/includes/auth_guards.php" || { echo "ERROR: auth_guards polyfill missing assert" >&2; exit 1; }
+      /bin/ls -la "$DEST/api.php" "$DEST/includes/platform.php" "$DEST/includes/auth_guards.php" "$DEST/includes/helpers.php"
+      echo "TagForge deploy OK: cpanel-force"
