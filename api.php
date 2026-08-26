@@ -2,6 +2,26 @@
 
 require_once __DIR__ . '/includes/init.php';
 
+// Safety net for partial deploys / stale OPcache: auth & platform routes need these.
+if (!function_exists('platform_public_payload')) {
+    $platformFile = __DIR__ . '/includes/platform.php';
+    if (is_file($platformFile)) {
+        require_once $platformFile;
+    }
+}
+if (!function_exists('dispatch_ops_api')) {
+    $opsFile = __DIR__ . '/includes/ops_api.php';
+    if (is_file($opsFile)) {
+        require_once $opsFile;
+    }
+}
+if (!function_exists('dispatch_admin_api')) {
+    $adminFile = __DIR__ . '/includes/admin_api.php';
+    if (is_file($adminFile)) {
+        require_once $adminFile;
+    }
+}
+
 header('X-Content-Type-Options: nosniff');
 header('X-Robots-Tag: noindex, nofollow');
 apply_cors_headers();
@@ -20,6 +40,9 @@ try {
     json_error(500, 'Database error. Check the MySQL connection and that install.php has been run.');
 } catch (Exception $e) {
     json_error(500, $e->getMessage());
+} catch (Throwable $e) {
+    // PHP 7+ Error/TypeError (e.g. undefined function after partial deploy) — always JSON.
+    json_error(500, 'Server error: ' . $e->getMessage());
 }
 
 function dispatch_api($method, $route)
@@ -32,7 +55,8 @@ function dispatch_api($method, $route)
     if ($route === 'version' && $method === 'GET') {
         json_ok(array(
             'app' => 'TagForge',
-            'deploy' => '2026-08-26-auth-csrf-fix',
+            'deploy' => '2026-08-26-login-platform-fix',
+            'platform' => function_exists('platform_public_payload'),
         ));
     }
 
@@ -154,6 +178,18 @@ function dispatch_api($method, $route)
         handle_redeem_promo(require_user());
     }
     if ($route === 'platform' && $method === 'GET') {
+        if (!function_exists('platform_public_payload')) {
+            json_ok(array(
+                'announcement' => null,
+                'features' => array(
+                    'razorpay' => true,
+                    'registration' => true,
+                    'reprints' => true,
+                ),
+                'free_registration_credits' => (int) app_config('free_registration_credits', 20),
+                'free_registration_validity_days' => max(1, (int) app_config('free_registration_validity_days', 2)),
+            ));
+        }
         json_ok(platform_public_payload());
     }
 
@@ -167,7 +203,7 @@ function dispatch_api($method, $route)
 
 function handle_register()
 {
-    if (!feature_enabled('registration')) {
+    if (function_exists('feature_enabled') && !feature_enabled('registration')) {
         json_error(403, 'New shop registration is temporarily closed.');
     }
     $data = request_json();
@@ -181,12 +217,16 @@ function handle_register()
         json_error(409, 'Email is already registered');
     }
 
-    $credits = free_pack_credits();
-    $freeDays = free_pack_days();
+    $credits = function_exists('free_pack_credits')
+        ? free_pack_credits()
+        : (int) app_config('free_registration_credits', 20);
+    $freeDays = function_exists('free_pack_days')
+        ? free_pack_days()
+        : max(1, (int) app_config('free_registration_validity_days', 2));
     $creditsExpireAt = gmdate('Y-m-d H:i:s', time() + ($freeDays * 86400));
-    $width = platform_setting('default_tag_width_mm', '80.00');
-    $height = platform_setting('default_tag_height_mm', '18.00');
-    $font = platform_setting('default_font_size_pt', '8.00');
+    $width = function_exists('platform_setting') ? platform_setting('default_tag_width_mm', '80.00') : '80.00';
+    $height = function_exists('platform_setting') ? platform_setting('default_tag_height_mm', '18.00') : '18.00';
+    $font = function_exists('platform_setting') ? platform_setting('default_font_size_pt', '8.00') : '8.00';
     $pdo = db();
     $pdo->beginTransaction();
     try {
@@ -227,18 +267,24 @@ function handle_login()
     $email = require_email($data);
     $password = isset($data['password']) ? (string) $data['password'] : '';
     $user = db_one('SELECT * FROM users WHERE email = ?', array($email));
-    if (!$user || !password_verify($password, $user['password_hash'])) {
-        log_login_attempt($email, $user, false, 'Invalid credentials');
+    $hash = ($user && isset($user['password_hash'])) ? $user['password_hash'] : null;
+    $passwordOk = is_string($hash) && $hash !== '' && password_verify($password, $hash);
+    if (!$user || !$passwordOk) {
+        if (function_exists('log_login_attempt')) {
+            log_login_attempt($email, $user, false, 'Invalid credentials');
+        }
         json_error(401, 'Invalid email or password');
     }
     if (empty($user['is_active'])) {
-        log_login_attempt($email, $user, false, 'Inactive user');
+        if (function_exists('log_login_attempt')) {
+            log_login_attempt($email, $user, false, 'Inactive user');
+        }
         json_error(401, 'Inactive user');
     }
     $shop = get_shop($user['shop_id']);
     assert_shop_not_suspended($user, $shop);
 
-    if ($user['role'] === 'admin' && admin_requires_2fa($user)) {
+    if ($user['role'] === 'admin' && function_exists('admin_requires_2fa') && admin_requires_2fa($user)) {
         $_SESSION['pending_admin_2fa'] = (int) $user['id'];
         $methods = array();
         if (!empty($user['totp_enabled'])) {
@@ -246,9 +292,13 @@ function handle_login()
         }
         if (!empty($user['email_otp_enabled'])) {
             $methods[] = 'email';
-            create_email_otp($user);
+            if (function_exists('create_email_otp')) {
+                create_email_otp($user);
+            }
         }
-        log_login_attempt($email, $user, true, 'Password ok; awaiting 2FA');
+        if (function_exists('log_login_attempt')) {
+            log_login_attempt($email, $user, true, 'Password ok; awaiting 2FA');
+        }
         json_ok(array(
             'requires_2fa' => true,
             'methods' => $methods,
@@ -258,7 +308,9 @@ function handle_login()
     }
 
     login_user($user);
-    log_login_attempt($email, $user, true, 'Login success');
+    if (function_exists('log_login_attempt')) {
+        log_login_attempt($email, $user, true, 'Login success');
+    }
     json_ok(auth_payload($user, $shop));
 }
 
@@ -286,12 +338,16 @@ function handle_verify_2fa()
         $method = 'totp';
     }
     if (!$ok) {
-        log_login_attempt($user['email'], $user, false, 'Invalid 2FA code');
+        if (function_exists('log_login_attempt')) {
+            log_login_attempt($user['email'], $user, false, 'Invalid 2FA code');
+        }
         json_error(401, 'Invalid verification code');
     }
     unset($_SESSION['pending_admin_2fa']);
     login_user($user);
-    log_login_attempt($user['email'], $user, true, '2FA success via ' . $method);
+    if (function_exists('log_login_attempt')) {
+        log_login_attempt($user['email'], $user, true, '2FA success via ' . $method);
+    }
     json_ok(auth_payload($user, get_shop($user['shop_id'])));
 }
 
@@ -542,7 +598,7 @@ function handle_print_tag($user)
     if (!$tag) {
         json_error(404, 'Tag not found');
     }
-    if ((int) $tag['print_count'] > 0 && !feature_enabled('reprints')) {
+    if ((int) $tag['print_count'] > 0 && function_exists('feature_enabled') && !feature_enabled('reprints')) {
         json_error(403, 'Reprints are temporarily disabled by the platform.');
     }
     db_exec('UPDATE jewellery_tags SET print_count = print_count + copies WHERE id = ?', array($tag['id']));
@@ -744,7 +800,8 @@ function handle_create_purchase($user)
 
     $orderId = null;
     $checkoutMode = 'local';
-    $useRazorpay = razorpay_configured() && feature_enabled('razorpay') && $amountInr > 0;
+    $razorpayFeatureOn = !function_exists('feature_enabled') || feature_enabled('razorpay');
+    $useRazorpay = razorpay_configured() && $razorpayFeatureOn && $amountInr > 0;
     if ($useRazorpay) {
         try {
             $order = razorpay_create_order(
@@ -762,7 +819,7 @@ function handle_create_purchase($user)
             json_error(502, $e->getMessage());
         }
     } else {
-        if ($amountInr > 0 && razorpay_configured() && !feature_enabled('razorpay')) {
+        if ($amountInr > 0 && razorpay_configured() && !$razorpayFeatureOn) {
             json_error(403, 'Online payments are temporarily disabled. Contact support for offline payment.');
         }
         $orderId = 'local_order_' . $user['shop_id'] . '_' . time();

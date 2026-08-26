@@ -6,102 +6,123 @@
 
 function ensure_ops_schema($pdo = null)
 {
-    $pdo = $pdo ?: db();
-
-    if (!table_has_column($pdo, 'billing_plans', 'is_system')) {
-        $pdo->exec("ALTER TABLE billing_plans ADD COLUMN is_system TINYINT(1) NOT NULL DEFAULT 0 AFTER is_active");
-        $pdo->exec("UPDATE billing_plans SET is_system = 1 WHERE code IN ('monthly')");
+    static $done = false;
+    if ($done) {
+        return;
     }
+    try {
+        $pdo = $pdo ?: db();
 
-    $pdo->exec(
-        "CREATE TABLE IF NOT EXISTS platform_settings (
-            setting_key VARCHAR(80) NOT NULL,
-            setting_value TEXT,
-            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            updated_by INT UNSIGNED DEFAULT NULL,
-            PRIMARY KEY (setting_key)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
-    );
+        try {
+            if (!table_has_column($pdo, 'billing_plans', 'is_system')) {
+                $pdo->exec("ALTER TABLE billing_plans ADD COLUMN is_system TINYINT(1) NOT NULL DEFAULT 0 AFTER is_active");
+                $pdo->exec("UPDATE billing_plans SET is_system = 1 WHERE code IN ('monthly')");
+            }
+        } catch (Exception $e) {
+            // Column add may fail on locked/old MySQL; continue seeding other ops tables.
+        }
 
-    $pdo->exec(
-        "CREATE TABLE IF NOT EXISTS promo_codes (
-            id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-            code VARCHAR(40) NOT NULL,
-            description VARCHAR(240) NOT NULL DEFAULT '',
-            tag_credits INT NOT NULL DEFAULT 0,
-            validity_days INT NOT NULL DEFAULT 7,
-            is_unlimited TINYINT(1) NOT NULL DEFAULT 0,
-            max_redemptions INT NOT NULL DEFAULT 0,
-            redemption_count INT NOT NULL DEFAULT 0,
-            starts_at DATETIME DEFAULT NULL,
-            ends_at DATETIME DEFAULT NULL,
-            is_active TINYINT(1) NOT NULL DEFAULT 1,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
-            UNIQUE KEY uq_promo_code (code)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
-    );
+        $pdo->exec(
+            "CREATE TABLE IF NOT EXISTS platform_settings (
+                setting_key VARCHAR(80) NOT NULL,
+                setting_value TEXT,
+                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                updated_by INT UNSIGNED DEFAULT NULL,
+                PRIMARY KEY (setting_key)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
 
-    $pdo->exec(
-        "CREATE TABLE IF NOT EXISTS promo_redemptions (
-            id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-            promo_id INT UNSIGNED NOT NULL,
-            shop_id INT UNSIGNED NOT NULL,
-            user_id INT UNSIGNED NOT NULL,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
-            UNIQUE KEY uq_promo_shop (promo_id, shop_id),
-            KEY idx_promo_redemptions_shop (shop_id),
-            CONSTRAINT fk_promo_redemptions_promo FOREIGN KEY (promo_id) REFERENCES promo_codes (id),
-            CONSTRAINT fk_promo_redemptions_shop FOREIGN KEY (shop_id) REFERENCES shops (id),
-            CONSTRAINT fk_promo_redemptions_user FOREIGN KEY (user_id) REFERENCES users (id)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
-    );
+        $pdo->exec(
+            "CREATE TABLE IF NOT EXISTS promo_codes (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                code VARCHAR(40) NOT NULL,
+                description VARCHAR(240) NOT NULL DEFAULT '',
+                tag_credits INT NOT NULL DEFAULT 0,
+                validity_days INT NOT NULL DEFAULT 7,
+                is_unlimited TINYINT(1) NOT NULL DEFAULT 0,
+                max_redemptions INT NOT NULL DEFAULT 0,
+                redemption_count INT NOT NULL DEFAULT 0,
+                starts_at DATETIME DEFAULT NULL,
+                ends_at DATETIME DEFAULT NULL,
+                is_active TINYINT(1) NOT NULL DEFAULT 1,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uq_promo_code (code)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
 
-    $pdo->exec(
-        "CREATE TABLE IF NOT EXISTS admin_activity_log (
-            id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-            admin_user_id INT UNSIGNED DEFAULT NULL,
-            action VARCHAR(80) NOT NULL,
-            entity_type VARCHAR(40) DEFAULT NULL,
-            entity_id INT UNSIGNED DEFAULT NULL,
-            detail VARCHAR(1000) DEFAULT NULL,
-            ip VARCHAR(64) DEFAULT NULL,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
-            KEY idx_activity_created (created_at),
-            KEY idx_activity_admin (admin_user_id)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
-    );
+        try {
+            $pdo->exec(
+                "CREATE TABLE IF NOT EXISTS promo_redemptions (
+                    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    promo_id INT UNSIGNED NOT NULL,
+                    shop_id INT UNSIGNED NOT NULL,
+                    user_id INT UNSIGNED NOT NULL,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY uq_promo_shop (promo_id, shop_id),
+                    KEY idx_promo_redemptions_shop (shop_id),
+                    CONSTRAINT fk_promo_redemptions_promo FOREIGN KEY (promo_id) REFERENCES promo_codes (id),
+                    CONSTRAINT fk_promo_redemptions_shop FOREIGN KEY (shop_id) REFERENCES shops (id),
+                    CONSTRAINT fk_promo_redemptions_user FOREIGN KEY (user_id) REFERENCES users (id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+            );
+        } catch (Exception $e) {
+            // FK creation can fail on some shared hosts; promos still usable without redemptions table.
+        }
 
-    $pdo->exec(
-        "CREATE TABLE IF NOT EXISTS login_audit (
-            id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-            email VARCHAR(255) NOT NULL,
-            user_id INT UNSIGNED DEFAULT NULL,
-            success TINYINT(1) NOT NULL DEFAULT 0,
-            is_admin TINYINT(1) NOT NULL DEFAULT 0,
-            ip VARCHAR(64) DEFAULT NULL,
-            user_agent VARCHAR(255) DEFAULT NULL,
-            detail VARCHAR(240) DEFAULT NULL,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
-            KEY idx_login_audit_created (created_at),
-            KEY idx_login_audit_email (email)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
-    );
+        $pdo->exec(
+            "CREATE TABLE IF NOT EXISTS admin_activity_log (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                admin_user_id INT UNSIGNED DEFAULT NULL,
+                action VARCHAR(80) NOT NULL,
+                entity_type VARCHAR(40) DEFAULT NULL,
+                entity_id INT UNSIGNED DEFAULT NULL,
+                detail VARCHAR(1000) DEFAULT NULL,
+                ip VARCHAR(64) DEFAULT NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                KEY idx_activity_created (created_at),
+                KEY idx_activity_admin (admin_user_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
 
-    if (!table_has_column($pdo, 'users', 'totp_secret')) {
-        $pdo->exec("ALTER TABLE users ADD COLUMN totp_secret VARCHAR(64) DEFAULT NULL AFTER password_hash");
+        $pdo->exec(
+            "CREATE TABLE IF NOT EXISTS login_audit (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                email VARCHAR(255) NOT NULL,
+                user_id INT UNSIGNED DEFAULT NULL,
+                success TINYINT(1) NOT NULL DEFAULT 0,
+                is_admin TINYINT(1) NOT NULL DEFAULT 0,
+                ip VARCHAR(64) DEFAULT NULL,
+                user_agent VARCHAR(255) DEFAULT NULL,
+                detail VARCHAR(240) DEFAULT NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                KEY idx_login_audit_created (created_at),
+                KEY idx_login_audit_email (email)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
+
+        try {
+            if (!table_has_column($pdo, 'users', 'totp_secret')) {
+                $pdo->exec("ALTER TABLE users ADD COLUMN totp_secret VARCHAR(64) DEFAULT NULL AFTER password_hash");
+            }
+            if (!table_has_column($pdo, 'users', 'totp_enabled')) {
+                $pdo->exec("ALTER TABLE users ADD COLUMN totp_enabled TINYINT(1) NOT NULL DEFAULT 0 AFTER totp_secret");
+            }
+            if (!table_has_column($pdo, 'users', 'email_otp_enabled')) {
+                $pdo->exec("ALTER TABLE users ADD COLUMN email_otp_enabled TINYINT(1) NOT NULL DEFAULT 0 AFTER totp_enabled");
+            }
+        } catch (Exception $e) {
+            // 2FA columns optional until migrate succeeds.
+        }
+
+        seed_default_platform_settings($pdo);
+        $done = true;
+    } catch (Exception $e) {
+        // Never take down auth/API because ops schema migrate failed.
     }
-    if (!table_has_column($pdo, 'users', 'totp_enabled')) {
-        $pdo->exec("ALTER TABLE users ADD COLUMN totp_enabled TINYINT(1) NOT NULL DEFAULT 0 AFTER totp_secret");
-    }
-    if (!table_has_column($pdo, 'users', 'email_otp_enabled')) {
-        $pdo->exec("ALTER TABLE users ADD COLUMN email_otp_enabled TINYINT(1) NOT NULL DEFAULT 0 AFTER totp_enabled");
-    }
-
-    seed_default_platform_settings($pdo);
 }
 
 function default_platform_settings()
@@ -156,6 +177,8 @@ function platform_setting($key, $default = null)
         try {
             $cache = platform_settings_all();
         } catch (Exception $e) {
+            $cache = default_platform_settings();
+        } catch (Throwable $e) {
             $cache = default_platform_settings();
         }
     }
@@ -212,13 +235,19 @@ function free_pack_days()
 
 function feature_enabled($flag)
 {
-    $map = array(
-        'razorpay' => 'feature_razorpay',
-        'registration' => 'feature_registration',
-        'reprints' => 'feature_reprints',
-    );
-    $key = isset($map[$flag]) ? $map[$flag] : $flag;
-    return platform_bool($key, true);
+    try {
+        $map = array(
+            'razorpay' => 'feature_razorpay',
+            'registration' => 'feature_registration',
+            'reprints' => 'feature_reprints',
+        );
+        $key = isset($map[$flag]) ? $map[$flag] : $flag;
+        return platform_bool($key, true);
+    } catch (Exception $e) {
+        return true;
+    } catch (Throwable $e) {
+        return true;
+    }
 }
 
 function client_ip()
@@ -277,6 +306,8 @@ function log_login_attempt($email, $user, $success, $detail = null)
         );
     } catch (Exception $e) {
         // ignore
+    } catch (Throwable $e) {
+        // ignore
     }
 }
 
@@ -331,23 +362,39 @@ function login_audit_to_array($row)
 
 function platform_public_payload()
 {
-    $announcement = null;
-    if (platform_bool('announcement_enabled', false)) {
-        $message = trim((string) platform_setting('announcement_message', ''));
-        if ($message !== '') {
-            $announcement = $message;
-        }
-    }
-    return array(
-        'announcement' => $announcement,
+    $fallback = array(
+        'announcement' => null,
         'features' => array(
-            'razorpay' => feature_enabled('razorpay'),
-            'registration' => feature_enabled('registration'),
-            'reprints' => feature_enabled('reprints'),
+            'razorpay' => true,
+            'registration' => true,
+            'reprints' => true,
         ),
-        'free_registration_credits' => free_pack_credits(),
-        'free_registration_validity_days' => free_pack_days(),
+        'free_registration_credits' => (int) app_config('free_registration_credits', 20),
+        'free_registration_validity_days' => max(1, (int) app_config('free_registration_validity_days', 2)),
     );
+    try {
+        $announcement = null;
+        if (platform_bool('announcement_enabled', false)) {
+            $message = trim((string) platform_setting('announcement_message', ''));
+            if ($message !== '') {
+                $announcement = $message;
+            }
+        }
+        return array(
+            'announcement' => $announcement,
+            'features' => array(
+                'razorpay' => feature_enabled('razorpay'),
+                'registration' => feature_enabled('registration'),
+                'reprints' => feature_enabled('reprints'),
+            ),
+            'free_registration_credits' => free_pack_credits(),
+            'free_registration_validity_days' => free_pack_days(),
+        );
+    } catch (Exception $e) {
+        return $fallback;
+    } catch (Throwable $e) {
+        return $fallback;
+    }
 }
 
 /* ---- TOTP helpers (RFC 6238, no external libs) ---- */

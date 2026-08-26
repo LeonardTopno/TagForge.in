@@ -731,13 +731,32 @@ function require_admin()
 
 function auth_payload($user, $shop)
 {
+    $platform = array(
+        'announcement' => null,
+        'features' => array(
+            'razorpay' => true,
+            'registration' => true,
+            'reprints' => true,
+        ),
+        'free_registration_credits' => (int) app_config('free_registration_credits', 20),
+        'free_registration_validity_days' => max(1, (int) app_config('free_registration_validity_days', 2)),
+    );
+    if (function_exists('platform_public_payload')) {
+        try {
+            $platform = platform_public_payload();
+        } catch (Exception $e) {
+            // keep defaults
+        } catch (Throwable $e) {
+            // keep defaults
+        }
+    }
     return array(
         'access_token' => 'session',
         'token_type' => 'session',
         'user' => user_to_array($user),
         'shop' => shop_to_array($shop),
         'support' => support_view_to_array(support_view_from_session()),
-        'platform' => platform_public_payload(),
+        'platform' => $platform,
         'csrf_token' => csrf_token(),
     );
 }

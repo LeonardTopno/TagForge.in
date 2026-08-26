@@ -60,5 +60,11 @@ csrf_token();
 ensure_upload_dirs();
 ensure_password_reset_schema();
 ensure_admin_platform_schema();
-ensure_ops_schema();
-sync_billing_plans();
+try {
+    ensure_ops_schema();
+    sync_billing_plans();
+} catch (Exception $e) {
+    // Ops schema/plan sync must not block login or shop API.
+} catch (Throwable $e) {
+    // PHP 7+ Errors
+}
