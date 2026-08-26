@@ -3,7 +3,7 @@
 require_once __DIR__ . '/includes/init.php';
 
 // Safety net for partial deploys / stale OPcache: auth & platform routes need these.
-if (!function_exists('platform_public_payload')) {
+if (!function_exists('platform_public_payload') || !function_exists('ensure_ops_schema')) {
     $platformFile = __DIR__ . '/includes/platform.php';
     if (is_file($platformFile)) {
         require_once $platformFile;
@@ -19,6 +19,54 @@ if (!function_exists('dispatch_admin_api')) {
     $adminFile = __DIR__ . '/includes/admin_api.php';
     if (is_file($adminFile)) {
         require_once $adminFile;
+    }
+}
+
+// Always load polyfills last so missing auth helpers cannot 500 login.
+$authGuardsFile = __DIR__ . '/includes/auth_guards.php';
+if (is_file($authGuardsFile)) {
+    require_once $authGuardsFile;
+} else {
+    // Inline minimal guards when auth_guards.php itself failed to deploy.
+    if (!function_exists('assert_shop_not_suspended')) {
+        function assert_shop_not_suspended($user, $shop)
+        {
+            if (!$user || (isset($user['role']) && $user['role'] === 'admin')) {
+                return;
+            }
+            if (isset($shop['is_active']) && (int) $shop['is_active'] === 0) {
+                $reason = !empty($shop['suspended_reason']) ? $shop['suspended_reason'] : 'Contact support.';
+                json_error(403, 'This shop is suspended. ' . $reason);
+            }
+        }
+    }
+    if (!function_exists('platform_public_payload')) {
+        function platform_public_payload()
+        {
+            return array(
+                'announcement' => null,
+                'features' => array('razorpay' => true, 'registration' => true, 'reprints' => true),
+                'free_registration_credits' => 20,
+                'free_registration_validity_days' => 2,
+            );
+        }
+    }
+    if (!function_exists('feature_enabled')) {
+        function feature_enabled($flag)
+        {
+            return true;
+        }
+    }
+    if (!function_exists('log_login_attempt')) {
+        function log_login_attempt($email, $user, $success, $detail = null)
+        {
+        }
+    }
+    if (!function_exists('admin_requires_2fa')) {
+        function admin_requires_2fa($user)
+        {
+            return false;
+        }
     }
 }
 
@@ -55,8 +103,11 @@ function dispatch_api($method, $route)
     if ($route === 'version' && $method === 'GET') {
         json_ok(array(
             'app' => 'TagForge',
-            'deploy' => '2026-08-26-login-platform-fix',
+            'deploy' => '2026-08-26-auth-guards',
             'platform' => function_exists('platform_public_payload'),
+            'assert_shop' => function_exists('assert_shop_not_suspended'),
+            'auth_guards' => is_file(__DIR__ . '/includes/auth_guards.php'),
+            'platform_file' => is_file(__DIR__ . '/includes/platform.php'),
         ));
     }
 
