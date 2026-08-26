@@ -146,11 +146,18 @@
   }
 
   function printableTagHtml(tag, shop) {
+    const width = shop.tag_width_mm || 80;
+    const height = shop.tag_height_mm || 18;
+    const x = Number(shop.horizontal_offset_mm) || 0;
+    const y = Number(shop.vertical_offset_mm) || 0;
+    // Position with left/top (not transform) so print engines don't invent a 2nd page.
     const style = [
-      'width:' + shop.tag_width_mm + 'mm',
-      'height:' + shop.tag_height_mm + 'mm',
+      'width:' + width + 'mm',
+      'height:' + height + 'mm',
       'font-size:' + shop.font_size_pt + 'pt',
-      'transform:translate(' + shop.horizontal_offset_mm + 'mm,' + shop.vertical_offset_mm + 'mm)',
+      'left:' + x + 'mm',
+      'top:' + y + 'mm',
+      'position:relative',
     ].join(';');
     return (
       '<article class="print-tag" style="' + style + '">' +
@@ -578,6 +585,7 @@
   }
 
   function render() {
+    document.documentElement.classList.add('app-ready');
     document.body.classList.toggle('nav-locked', state.navOpen);
     if (!state.user || !state.shop) {
       setDocumentTitle(state.authMode === 'register' ? 'Create shop' : (state.authMode === 'forgot' || state.authMode === 'reset' ? 'Reset password' : 'Sign in'));
@@ -638,7 +646,8 @@
     styleEl.textContent =
       '@media print {' +
         '@page { size: ' + width + 'mm ' + height + 'mm; margin: 0; }' +
-        'html, body, #print-root { width: ' + width + 'mm !important; height: ' + height + 'mm !important; }' +
+        'html, body, #print-root { width: ' + width + 'mm !important; height: ' + height + 'mm !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; }' +
+        '#print-root .print-tag { width: ' + width + 'mm !important; height: ' + height + 'mm !important; }' +
       '}';
   }
 
@@ -660,11 +669,11 @@
     ensurePrintPageSize(shop);
     const printRoot = getPrintRoot();
     printRoot.innerHTML = printableTagHtml(state.activeTag, shop);
-    render();
 
     const cleanup = function () {
       window.removeEventListener('afterprint', cleanup);
       printRoot.innerHTML = '';
+      render();
     };
     window.addEventListener('afterprint', cleanup);
     window.setTimeout(function () { window.print(); }, 50);
@@ -1157,6 +1166,9 @@
   }
 
   function boot() {
+    // Paint auth/shell immediately so SEO fallback never flashes after scripts load.
+    render();
+
     if (supportFromUrl) {
       return api.supportStart(supportFromUrl).then(function (auth) {
         clearSupportQuery();

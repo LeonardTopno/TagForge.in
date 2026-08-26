@@ -530,9 +530,9 @@ label {
 }
 
 .print-tag {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 2.5mm 18mm;
-  align-items: stretch;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
   padding: 0;
   overflow: hidden;
   color: #111827;
@@ -543,13 +543,15 @@ label {
 
 .tag-printable-face {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 0 minmax(0, 1fr);
   align-items: stretch;
+  flex: 1 1 auto;
+  align-self: stretch;
   min-width: 0;
   height: 100%;
   overflow: hidden;
   border: 1px solid #111827;
-  border-radius: 1.5mm;
+  border-radius: 1.5mm 0 0 1.5mm;
   background: #ffffff;
 }
 
@@ -573,25 +575,31 @@ label {
 
 .tag-fold-mark {
   width: 0;
+  height: 100%;
   align-self: stretch;
+  margin: 0;
   border-left: 0.35mm dashed #111827;
-  margin: 0 1.2mm;
 }
 
 .tag-neck {
+  flex: 0 0 2.5mm;
+  width: 2.5mm;
+  height: 50%;
   align-self: center;
-  height: 55%;
   border-top: 1px solid #111827;
   border-bottom: 1px solid #111827;
   background: #ffffff;
 }
 
 .tag-tail {
+  flex: 0 0 18mm;
+  width: 18mm;
+  height: 36%;
   align-self: center;
-  height: 40%;
   border-top: 1px solid #111827;
   border-bottom: 1px solid #111827;
   border-right: 1px solid #111827;
+  border-radius: 0 1mm 1mm 0;
   background: #ffffff;
 }
 
@@ -852,7 +860,7 @@ th {
   background: transparent;
 }
 
-/* SEO crawlable landing (replaced by SPA after boot) */
+/* SEO crawlable landing (in HTML for crawlers; hidden for JS clients via layout critical CSS) */
 .seo-landing {
   max-width: 920px;
   margin: 0 auto;
@@ -1787,6 +1795,10 @@ th {
     margin: 0;
   }
 
+  .boot-splash {
+    display: none !important;
+  }
+
   html,
   body {
     width: 80mm !important;
@@ -1821,19 +1833,32 @@ th {
   }
 
   #print-root .print-tag {
-    display: grid !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
     position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
     margin: 0 !important;
     box-shadow: none !important;
+    overflow: hidden !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
     color-adjust: exact;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
   #print-root .tag-printable-face {
     display: grid !important;
+    align-self: stretch !important;
+    height: 100% !important;
+  }
+
+  #print-root .tag-fold-mark {
+    display: block !important;
+    height: 100% !important;
+    align-self: stretch !important;
   }
 
   #print-root .tag-panel,
@@ -1848,6 +1873,7 @@ th {
   #print-root .tag-neck,
   #print-root .tag-tail {
     display: block !important;
+    align-self: center !important;
   }
 
   #print-root .tag-back-logo {

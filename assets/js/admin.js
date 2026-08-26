@@ -806,6 +806,7 @@
   }
 
   function render() {
+    document.documentElement.classList.add('app-ready');
     if (!state.adminUser) {
       setDocumentTitle(state.pending2fa ? 'Verify 2FA' : 'Sign in');
       root.innerHTML = renderLogin();
@@ -1441,6 +1442,7 @@
     }
   });
 
+  render();
   api.me().then(function (auth) {
     if (String(auth.user.role).toLowerCase() !== 'admin') {
       throw new Error('not admin');
