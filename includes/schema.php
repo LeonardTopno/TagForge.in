@@ -49,6 +49,9 @@ function install_schema(PDO $pdo)
             tag_credit_balance INT NOT NULL DEFAULT 20,
             credits_expire_at DATETIME DEFAULT NULL,
             unlimited_until DATETIME DEFAULT NULL,
+            is_active TINYINT(1) NOT NULL DEFAULT 1,
+            suspended_reason VARCHAR(240) DEFAULT NULL,
+            last_active_at DATETIME DEFAULT NULL,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
@@ -130,6 +133,7 @@ function install_schema(PDO $pdo)
             validity_days INT NOT NULL,
             is_unlimited TINYINT(1) NOT NULL DEFAULT 0,
             is_active TINYINT(1) NOT NULL DEFAULT 1,
+            is_system TINYINT(1) NOT NULL DEFAULT 0,
             sort_order INT NOT NULL DEFAULT 0,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -145,12 +149,16 @@ function install_schema(PDO $pdo)
             tag_credits INT NOT NULL,
             validity_days INT NOT NULL,
             is_unlimited TINYINT(1) NOT NULL DEFAULT 0,
-            status ENUM('pending','paid','failed') NOT NULL DEFAULT 'pending',
+            status ENUM('pending','paid','failed','refunded') NOT NULL DEFAULT 'pending',
+            payment_method VARCHAR(40) NOT NULL DEFAULT 'razorpay',
             razorpay_order_id VARCHAR(120) DEFAULT NULL,
             razorpay_payment_id VARCHAR(120) DEFAULT NULL,
             notes TEXT,
+            receipt_note VARCHAR(240) DEFAULT NULL,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             paid_at DATETIME DEFAULT NULL,
+            refunded_at DATETIME DEFAULT NULL,
+            recorded_by INT UNSIGNED DEFAULT NULL,
             PRIMARY KEY (id),
             KEY idx_purchases_shop (shop_id),
             CONSTRAINT fk_purchases_shop FOREIGN KEY (shop_id) REFERENCES shops (id),
@@ -214,6 +222,83 @@ function ensure_password_reset_schema($pdo = null)
     );
 }
 
+function table_has_column(PDO $pdo, $table, $column)
+{
+    $stmt = $pdo->prepare('SHOW COLUMNS FROM `' . str_replace('`', '``', $table) . '` LIKE ?');
+    $stmt->execute(array($column));
+    return (bool) $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+function ensure_admin_platform_schema($pdo = null)
+{
+    $pdo = $pdo ?: db();
+
+    if (!table_has_column($pdo, 'shops', 'is_active')) {
+        $pdo->exec("ALTER TABLE shops ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1 AFTER unlimited_until");
+    }
+    if (!table_has_column($pdo, 'shops', 'suspended_reason')) {
+        $pdo->exec("ALTER TABLE shops ADD COLUMN suspended_reason VARCHAR(240) DEFAULT NULL AFTER is_active");
+    }
+    if (!table_has_column($pdo, 'shops', 'last_active_at')) {
+        $pdo->exec("ALTER TABLE shops ADD COLUMN last_active_at DATETIME DEFAULT NULL AFTER suspended_reason");
+    }
+
+    if (!table_has_column($pdo, 'plan_purchases', 'payment_method')) {
+        $pdo->exec("ALTER TABLE plan_purchases ADD COLUMN payment_method VARCHAR(40) NOT NULL DEFAULT 'razorpay' AFTER status");
+    }
+    if (!table_has_column($pdo, 'plan_purchases', 'receipt_note')) {
+        $pdo->exec("ALTER TABLE plan_purchases ADD COLUMN receipt_note VARCHAR(240) DEFAULT NULL AFTER notes");
+    }
+    if (!table_has_column($pdo, 'plan_purchases', 'refunded_at')) {
+        $pdo->exec("ALTER TABLE plan_purchases ADD COLUMN refunded_at DATETIME DEFAULT NULL AFTER paid_at");
+    }
+    if (!table_has_column($pdo, 'plan_purchases', 'recorded_by')) {
+        $pdo->exec("ALTER TABLE plan_purchases ADD COLUMN recorded_by INT UNSIGNED DEFAULT NULL AFTER refunded_at");
+    }
+
+    // Expand purchase status to include refunded when possible.
+    try {
+        $pdo->exec("ALTER TABLE plan_purchases MODIFY status ENUM('pending','paid','failed','refunded') NOT NULL DEFAULT 'pending'");
+    } catch (Exception $e) {
+        // Ignore if MySQL version/permissions block ENUM change; refunded_at still works.
+    }
+
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS shop_support_notes (
+            id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            shop_id INT UNSIGNED NOT NULL,
+            author_user_id INT UNSIGNED NOT NULL,
+            body VARCHAR(1000) NOT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY idx_support_notes_shop (shop_id),
+            CONSTRAINT fk_support_notes_shop FOREIGN KEY (shop_id) REFERENCES shops (id),
+            CONSTRAINT fk_support_notes_author FOREIGN KEY (author_user_id) REFERENCES users (id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS support_view_tokens (
+            id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            token_hash CHAR(64) NOT NULL,
+            admin_user_id INT UNSIGNED NOT NULL,
+            shop_id INT UNSIGNED NOT NULL,
+            target_user_id INT UNSIGNED NOT NULL,
+            mode ENUM('readonly','timed') NOT NULL DEFAULT 'readonly',
+            duration_minutes INT NOT NULL DEFAULT 30,
+            expires_at DATETIME NOT NULL,
+            used_at DATETIME DEFAULT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY uq_support_view_token (token_hash),
+            KEY idx_support_view_shop (shop_id),
+            CONSTRAINT fk_support_view_admin FOREIGN KEY (admin_user_id) REFERENCES users (id),
+            CONSTRAINT fk_support_view_shop FOREIGN KEY (shop_id) REFERENCES shops (id),
+            CONSTRAINT fk_support_view_target FOREIGN KEY (target_user_id) REFERENCES users (id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+}
+
 function seed_billing_plans(PDO $pdo)
 {
     sync_billing_plans($pdo);
@@ -222,21 +307,24 @@ function seed_billing_plans(PDO $pdo)
 function sync_billing_plans($pdo = null)
 {
     $pdo = $pdo ?: db();
-    $activeCodes = array();
+    // Only seed missing system plans. Never overwrite admin edits or deactivate custom plans.
     foreach (default_billing_plans() as $plan) {
-        $activeCodes[] = $plan['code'];
         $existing = $pdo->prepare('SELECT id FROM billing_plans WHERE code = ?');
         $existing->execute(array($plan['code']));
         $row = $existing->fetch(PDO::FETCH_ASSOC);
         if ($row) {
+            if (table_has_column($pdo, 'billing_plans', 'is_system')) {
+                $pdo->prepare('UPDATE billing_plans SET is_system = 1 WHERE id = ?')->execute(array($row['id']));
+            }
+            continue;
+        }
+        if (table_has_column($pdo, 'billing_plans', 'is_system')) {
             $pdo->prepare(
-                'UPDATE billing_plans
-                 SET name = ?, description = ?, price_inr = ?, tag_credits = ?, validity_days = ?,
-                     is_unlimited = ?, is_active = 1, sort_order = ?
-                 WHERE id = ?'
+                'INSERT INTO billing_plans (code, name, description, price_inr, tag_credits, validity_days, is_unlimited, is_active, is_system, sort_order)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1, ?)'
             )->execute(array(
-                $plan['name'], $plan['description'], $plan['price_inr'], $plan['tag_credits'],
-                $plan['validity_days'], $plan['is_unlimited'], $plan['sort_order'], $row['id'],
+                $plan['code'], $plan['name'], $plan['description'], $plan['price_inr'],
+                $plan['tag_credits'], $plan['validity_days'], $plan['is_unlimited'], $plan['sort_order'],
             ));
         } else {
             $pdo->prepare(
@@ -247,12 +335,6 @@ function sync_billing_plans($pdo = null)
                 $plan['tag_credits'], $plan['validity_days'], $plan['is_unlimited'], $plan['sort_order'],
             ));
         }
-    }
-
-    if ($activeCodes) {
-        $placeholders = implode(',', array_fill(0, count($activeCodes), '?'));
-        $stmt = $pdo->prepare('UPDATE billing_plans SET is_active = 0 WHERE code NOT IN (' . $placeholders . ')');
-        $stmt->execute($activeCodes);
     }
 }
 
