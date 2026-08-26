@@ -16,4 +16,6 @@ deployment:
       /bin/cp -f assets/img/favicon.ico "$DEST/favicon.ico"
       /bin/cp -f assets/img/favicon.png "$DEST/favicon.png"
       /bin/cp -f api.php "$DEST/api.php"
-      /usr/bin/test -f "$DEST/api.php" && /bin/grep -q "2026-08-26-auth-csrf-fix" "$DEST/api.php"
+      /usr/bin/test -f "$DEST/api.php" && /bin/grep -q "2026-08-26-login-platform-fix" "$DEST/api.php"
+      /usr/bin/test -f "$DEST/includes/platform.php"
+      /usr/bin/test -f "$DEST/includes/ops_api.php"
