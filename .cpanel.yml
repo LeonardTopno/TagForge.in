@@ -24,7 +24,12 @@ deployment:
       if /usr/bin/test -f includes/seo.php; then /bin/cp -f includes/seo.php "$DEST/includes/seo.php"; fi
       if /usr/bin/test -f includes/layout.php; then /bin/cp -f includes/layout.php "$DEST/includes/layout.php"; fi
 
-      # 2) Rest of tree (do not abort deploy if a non-critical asset copy warns).
+      # 2) Front-end assets — copy critical JS/CSS explicitly (RF || true was silently skipping).
+      /bin/cp -f assets/css/app.css "$DEST/assets/css/app.css"
+      /bin/cp -f assets/js/api.js "$DEST/assets/js/api.js"
+      /bin/cp -f assets/js/app.js "$DEST/assets/js/app.js"
+      /bin/cp -f assets/js/admin.js "$DEST/assets/js/admin.js"
+      if /usr/bin/test -f assets/js/barcode.js; then /bin/cp -f assets/js/barcode.js "$DEST/assets/js/barcode.js"; fi
       /bin/cp -RF assets/. "$DEST/assets/" || true
       /bin/cp -RF scripts/. "$DEST/scripts/" || true
       /bin/cp -f .htaccess "$DEST/.htaccess" || true
@@ -38,14 +43,17 @@ deployment:
       /bin/cp -f assets/img/favicon.ico "$DEST/favicon.ico" || true
       /bin/cp -f assets/img/favicon.png "$DEST/favicon.png" || true
 
-      /bin/touch "$DEST/api.php" "$DEST/includes/helpers.php" "$DEST/includes/platform.php" "$DEST/includes/auth_guards.php" "$DEST/includes/init.php" "$DEST/includes/schema.php" || true
+      /bin/touch "$DEST/api.php" "$DEST/includes/helpers.php" "$DEST/includes/platform.php" "$DEST/includes/auth_guards.php" "$DEST/includes/init.php" "$DEST/includes/schema.php" "$DEST/includes/layout.php" "$DEST/assets/js/app.js" "$DEST/assets/css/app.css" || true
 
       echo "=== TagForge deploy verification ==="
       /bin/grep -n "2026-08-27-schema-column-check" "$DEST/api.php" || { echo "ERROR: api.php missing new deploy marker" >&2; exit 1; }
       /usr/bin/test -f "$DEST/includes/platform.php" || { echo "ERROR: platform.php missing in DEST" >&2; exit 1; }
       /usr/bin/test -f "$DEST/includes/auth_guards.php" || { echo "ERROR: auth_guards.php missing in DEST" >&2; exit 1; }
       /usr/bin/test -f "$DEST/includes/schema.php" || { echo "ERROR: schema.php missing in DEST" >&2; exit 1; }
+      /usr/bin/test -f "$DEST/assets/js/app.js" || { echo "ERROR: app.js missing in DEST" >&2; exit 1; }
       /bin/grep -q "information_schema.COLUMNS" "$DEST/includes/schema.php" || { echo "ERROR: schema.php missing column-check fix" >&2; exit 1; }
+      /bin/grep -q "app-ready" "$DEST/assets/js/app.js" || { echo "ERROR: app.js missing app-ready boot mark" >&2; exit 1; }
+      /bin/grep -q "boot-splash" "$DEST/includes/layout.php" || { echo "ERROR: layout.php missing boot-splash" >&2; exit 1; }
       /bin/grep -q "function assert_shop_not_suspended" "$DEST/includes/auth_guards.php" || { echo "ERROR: auth_guards polyfill missing assert" >&2; exit 1; }
-      /bin/ls -la "$DEST/api.php" "$DEST/includes/platform.php" "$DEST/includes/auth_guards.php" "$DEST/includes/helpers.php" "$DEST/includes/schema.php"
+      /bin/ls -la "$DEST/api.php" "$DEST/includes/platform.php" "$DEST/includes/layout.php" "$DEST/assets/js/app.js" "$DEST/assets/css/app.css"
       echo "TagForge deploy OK: schema-column-check"

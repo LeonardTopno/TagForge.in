@@ -51,10 +51,45 @@ $barcodeJsVersion = @filemtime($assetRoot . '/js/barcode.js') ?: time();
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <?php echo seo_render_head_tags($seo); ?>
-  <script>document.documentElement.classList.add('js');</script>
+  <script>
+    (function () {
+      document.documentElement.classList.add('js');
+      function markReady() {
+        document.documentElement.classList.add('app-ready');
+      }
+      // Failsafe: never trap users if assets fail to update after a PHP-only deploy.
+      setTimeout(markReady, 6000);
+      function watchApp() {
+        var app = document.getElementById('app');
+        if (!app) {
+          markReady();
+          return;
+        }
+        function maybeReady() {
+          // Keep splash while SEO landing is still the only placeholder, or #app is empty.
+          if (app.querySelector('.seo-landing')) return false;
+          if (!app.children.length) return false;
+          markReady();
+          return true;
+        }
+        if (maybeReady()) return;
+        if (!window.MutationObserver) return;
+        var obs = new MutationObserver(function () {
+          if (maybeReady()) obs.disconnect();
+        });
+        obs.observe(app, { childList: true, subtree: true });
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', watchApp);
+      } else {
+        watchApp();
+      }
+    })();
+  </script>
   <style>
-    /* Hide SEO fallback instantly for JS clients; keep HTML for crawlers. */
-    html.js .seo-landing { display: none !important; }
+    /* Hide SEO fallback only while splash is up; if JS assets never boot, failsafe
+       adds app-ready and the crawlable landing becomes visible again. */
+    html.js:not(.app-ready) .seo-landing { display: none !important; }
     .boot-splash { display: none; }
     html.js:not(.app-ready) .boot-splash {
       display: grid;
