@@ -46,6 +46,8 @@ function dispatch_api($method, $route)
         'auth/register' => true,
         'auth/forgot-password' => true,
         'auth/reset-password' => true,
+        'auth/support-start' => true,
+        'auth/verify-2fa' => true,
     );
     if ($method === 'POST' && isset($csrfExempt[$route])) {
         // fall through without require_csrf()
@@ -64,6 +66,15 @@ function dispatch_api($method, $route)
     }
     if ($route === 'auth/reset-password' && $method === 'POST') {
         handle_reset_password();
+    }
+    if ($route === 'auth/verify-2fa' && $method === 'POST') {
+        handle_verify_2fa();
+    }
+    if ($route === 'auth/support-start' && $method === 'POST') {
+        handle_support_start();
+    }
+    if ($route === 'auth/support-end' && $method === 'POST') {
+        handle_support_end();
     }
     if ($route === 'auth/logout' && $method === 'POST') {
         $_SESSION = array();
@@ -135,35 +146,19 @@ function dispatch_api($method, $route)
     if ($route === 'billing/purchases/confirm' && $method === 'POST') {
         handle_confirm_purchase(require_user());
     }
-    if ($route === 'admin/plans' && $method === 'GET') {
-        require_admin();
-        $rows = db_all('SELECT * FROM billing_plans ORDER BY sort_order ASC, price_inr ASC');
-        json_ok(array_map('plan_to_array', $rows));
+    if ($route === 'billing/purchases/fail' && $method === 'POST') {
+        handle_fail_purchase(require_user());
     }
-    if ($route === 'admin/plans' && $method === 'PUT') {
-        handle_admin_update_plan(require_admin());
+    if ($route === 'billing/promo' && $method === 'POST') {
+        handle_redeem_promo(require_user());
     }
-    if ($route === 'admin/tenants' && $method === 'GET') {
-        require_admin();
-        $shops = db_all('SELECT * FROM shops ORDER BY created_at DESC');
-        $out = array();
-        foreach ($shops as $shop) {
-            $out[] = admin_tenant_response($shop);
-        }
-        json_ok($out);
+    if ($route === 'platform' && $method === 'GET') {
+        json_ok(platform_public_payload());
     }
-    if ($route === 'admin/tenants/ledger' && $method === 'GET') {
-        require_admin();
-        $shopId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
-        $shop = get_shop($shopId);
-        $rows = db_all(
-            'SELECT * FROM credit_ledger_entries WHERE shop_id = ? ORDER BY created_at DESC, id DESC LIMIT 100',
-            array($shop['id'])
-        );
-        json_ok(array_map('ledger_to_array', $rows));
-    }
-    if ($route === 'admin/tenants/credit-adjustments' && $method === 'POST') {
-        handle_admin_adjust_credits(require_admin());
+
+    // Admin portal routes (dashboard, tenants, purchases, admins, plans)
+    if (strpos($route, 'admin/') === 0) {
+        dispatch_admin_api($method, $route);
     }
 
     json_error(404, 'Unknown API route');
@@ -171,6 +166,9 @@ function dispatch_api($method, $route)
 
 function handle_register()
 {
+    if (!feature_enabled('registration')) {
+        json_error(403, 'New shop registration is temporarily closed.');
+    }
     $data = request_json();
     $shopName = require_string($data, 'shop_name', 2, 160);
     $shortName = require_string($data, 'shop_short_name', 2, 40);
@@ -182,15 +180,19 @@ function handle_register()
         json_error(409, 'Email is already registered');
     }
 
-    $credits = (int) app_config('free_registration_credits', 20);
-    $freeDays = max(1, (int) app_config('free_registration_validity_days', 2));
+    $credits = free_pack_credits();
+    $freeDays = free_pack_days();
     $creditsExpireAt = gmdate('Y-m-d H:i:s', time() + ($freeDays * 86400));
+    $width = platform_setting('default_tag_width_mm', '80.00');
+    $height = platform_setting('default_tag_height_mm', '18.00');
+    $font = platform_setting('default_font_size_pt', '8.00');
     $pdo = db();
     $pdo->beginTransaction();
     try {
         db_exec(
-            'INSERT INTO shops (name, short_name, tag_credit_balance, credits_expire_at) VALUES (?, ?, ?, ?)',
-            array($shopName, $shortName, $credits, $creditsExpireAt)
+            'INSERT INTO shops (name, short_name, tag_credit_balance, credits_expire_at, tag_width_mm, tag_height_mm, font_size_pt)
+             VALUES (?, ?, ?, ?, ?, ?, ?)',
+            array($shopName, $shortName, $credits, $creditsExpireAt, $width, $height, $font)
         );
         $shopId = (int) $pdo->lastInsertId();
         db_exec(
@@ -225,13 +227,131 @@ function handle_login()
     $password = isset($data['password']) ? (string) $data['password'] : '';
     $user = db_one('SELECT * FROM users WHERE email = ?', array($email));
     if (!$user || !password_verify($password, $user['password_hash'])) {
+        log_login_attempt($email, $user, false, 'Invalid credentials');
         json_error(401, 'Invalid email or password');
     }
     if (empty($user['is_active'])) {
+        log_login_attempt($email, $user, false, 'Inactive user');
         json_error(401, 'Inactive user');
     }
+    $shop = get_shop($user['shop_id']);
+    assert_shop_not_suspended($user, $shop);
+
+    if ($user['role'] === 'admin' && admin_requires_2fa($user)) {
+        $_SESSION['pending_admin_2fa'] = (int) $user['id'];
+        $methods = array();
+        if (!empty($user['totp_enabled'])) {
+            $methods[] = 'totp';
+        }
+        if (!empty($user['email_otp_enabled'])) {
+            $methods[] = 'email';
+            create_email_otp($user);
+        }
+        log_login_attempt($email, $user, true, 'Password ok; awaiting 2FA');
+        json_ok(array(
+            'requires_2fa' => true,
+            'methods' => $methods,
+            'detail' => 'Enter your second factor to finish signing in.',
+            'csrf_token' => csrf_token(),
+        ));
+    }
+
     login_user($user);
+    log_login_attempt($email, $user, true, 'Login success');
+    json_ok(auth_payload($user, $shop));
+}
+
+function handle_verify_2fa()
+{
+    $data = request_json();
+    $userId = isset($_SESSION['pending_admin_2fa']) ? (int) $_SESSION['pending_admin_2fa'] : 0;
+    if ($userId <= 0) {
+        json_error(401, 'No pending admin login');
+    }
+    $user = db_one('SELECT * FROM users WHERE id = ? AND is_active = 1', array($userId));
+    if (!$user || $user['role'] !== 'admin') {
+        unset($_SESSION['pending_admin_2fa']);
+        json_error(401, 'No pending admin login');
+    }
+    $code = isset($data['code']) ? trim((string) $data['code']) : '';
+    $method = isset($data['method']) ? trim((string) $data['method']) : '';
+    $ok = false;
+    if ($method === 'email' || ($method === '' && !empty($user['email_otp_enabled']))) {
+        $ok = verify_email_otp($user, $code);
+        $method = 'email';
+    }
+    if (!$ok && ($method === 'totp' || ($method === '' && !empty($user['totp_enabled'])))) {
+        $ok = !empty($user['totp_secret']) && verify_totp_code($user['totp_secret'], $code);
+        $method = 'totp';
+    }
+    if (!$ok) {
+        log_login_attempt($user['email'], $user, false, 'Invalid 2FA code');
+        json_error(401, 'Invalid verification code');
+    }
+    unset($_SESSION['pending_admin_2fa']);
+    login_user($user);
+    log_login_attempt($user['email'], $user, true, '2FA success via ' . $method);
     json_ok(auth_payload($user, get_shop($user['shop_id'])));
+}
+
+function handle_support_start()
+{
+    ensure_admin_platform_schema();
+    $data = request_json();
+    $token = isset($data['token']) ? trim((string) $data['token']) : '';
+    if ($token === '' || !preg_match('/^[a-f0-9]{64}$/', $token)) {
+        json_error(422, 'Invalid or expired support link');
+    }
+    $tokenHash = hash('sha256', $token);
+    $row = db_one(
+        'SELECT * FROM support_view_tokens WHERE token_hash = ? AND used_at IS NULL LIMIT 1',
+        array($tokenHash)
+    );
+    if (!$row) {
+        json_error(422, 'Invalid or expired support link');
+    }
+    if (strtotime($row['expires_at'] . ' UTC') < time()) {
+        json_error(422, 'This support link has expired. Generate a new one from admin.');
+    }
+
+    $target = db_one('SELECT * FROM users WHERE id = ? AND is_active = 1', array((int) $row['target_user_id']));
+    $admin = db_one('SELECT * FROM users WHERE id = ?', array((int) $row['admin_user_id']));
+    $shop = get_shop((int) $row['shop_id']);
+    if (!$target || !$admin) {
+        json_error(422, 'Invalid or expired support link');
+    }
+
+    db_exec('UPDATE support_view_tokens SET used_at = ? WHERE id = ?', array(now_utc(), (int) $row['id']));
+
+    $duration = max(5, (int) $row['duration_minutes']);
+    $sessionExpires = gmdate('Y-m-d H:i:s', time() + ($duration * 60));
+
+    session_regenerate_id(true);
+    $_SESSION['user_id'] = (int) $target['id'];
+    $_SESSION['support_view'] = array(
+        'admin_id' => (int) $admin['id'],
+        'admin_name' => $admin['name'],
+        'admin_email' => $admin['email'],
+        'shop_id' => (int) $shop['id'],
+        'mode' => $row['mode'],
+        'expires_at' => $sessionExpires,
+        'started_at' => now_utc(),
+    );
+    csrf_token();
+
+    json_ok(auth_payload($target, $shop));
+}
+
+function handle_support_end()
+{
+    clear_support_view();
+    $_SESSION = array();
+    if (ini_get('session.use_cookies')) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
+    }
+    session_destroy();
+    json_ok(array('ok' => true));
 }
 
 function handle_forgot_password()
@@ -421,6 +541,9 @@ function handle_print_tag($user)
     if (!$tag) {
         json_error(404, 'Tag not found');
     }
+    if ((int) $tag['print_count'] > 0 && !feature_enabled('reprints')) {
+        json_error(403, 'Reprints are temporarily disabled by the platform.');
+    }
     db_exec('UPDATE jewellery_tags SET print_count = print_count + copies WHERE id = ?', array($tag['id']));
     db_exec(
         'INSERT INTO print_logs (shop_id, jewellery_tag_id, printed_by, copies, print_status) VALUES (?, ?, ?, ?, ?)',
@@ -590,26 +713,38 @@ function handle_create_purchase($user)
 {
     $data = request_json();
     $planId = require_int($data, 'plan_id', 1, 1000000);
-    $months = require_int($data, 'months', 1, 24);
+    $months = isset($data['months']) ? require_int($data, 'months', 1, 24) : 1;
     $plan = db_one('SELECT * FROM billing_plans WHERE id = ? AND is_active = 1', array($planId));
     if (!$plan) {
         json_error(404, 'Plan not found');
     }
-    if (empty($plan['is_unlimited'])) {
-        json_error(422, 'Only the Monthly Unlimited plan can be purchased.');
-    }
 
-    $unitPrice = (int) app_config('monthly_plan_price_inr', (int) $plan['price_inr']);
-    if ($unitPrice < 1) {
+    $isUnlimited = !empty($plan['is_unlimited']);
+    if ($isUnlimited) {
+        $unitPrice = (int) app_config('monthly_plan_price_inr', (int) $plan['price_inr']);
+        if ($unitPrice < 1) {
+            $unitPrice = (int) $plan['price_inr'];
+        }
+        $amountInr = $unitPrice * $months;
+        $validityDays = months_to_validity_days($months);
+        $tagCredits = 0;
+        $notes = 'months=' . $months . '; unit_price=' . $unitPrice;
+    } else {
+        $months = 1;
         $unitPrice = (int) $plan['price_inr'];
+        $amountInr = $unitPrice;
+        $validityDays = max(1, (int) $plan['validity_days']);
+        $tagCredits = (int) $plan['tag_credits'];
+        $notes = 'credit_pack=1; credits=' . $tagCredits;
+        if ($amountInr < 1 && $tagCredits <= 0) {
+            json_error(422, 'This plan cannot be purchased online');
+        }
     }
-    $amountInr = $unitPrice * $months;
-    $validityDays = months_to_validity_days($months);
-    $notes = 'months=' . $months . '; unit_price=' . $unitPrice;
 
     $orderId = null;
     $checkoutMode = 'local';
-    if (razorpay_configured()) {
+    $useRazorpay = razorpay_configured() && feature_enabled('razorpay') && $amountInr > 0;
+    if ($useRazorpay) {
         try {
             $order = razorpay_create_order(
                 $amountInr,
@@ -626,22 +761,26 @@ function handle_create_purchase($user)
             json_error(502, $e->getMessage());
         }
     } else {
+        if ($amountInr > 0 && razorpay_configured() && !feature_enabled('razorpay')) {
+            json_error(403, 'Online payments are temporarily disabled. Contact support for offline payment.');
+        }
         $orderId = 'local_order_' . $user['shop_id'] . '_' . time();
         $notes .= '; local_checkout=1';
     }
 
     db_exec(
-        'INSERT INTO plan_purchases (shop_id, plan_id, amount_inr, tag_credits, validity_days, is_unlimited, razorpay_order_id, notes)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO plan_purchases (shop_id, plan_id, amount_inr, tag_credits, validity_days, is_unlimited, razorpay_order_id, notes, payment_method)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
         array(
             $user['shop_id'],
             $plan['id'],
             $amountInr,
-            0,
+            $tagCredits,
             $validityDays,
-            1,
+            $isUnlimited ? 1 : 0,
             $orderId,
             $notes,
+            $checkoutMode === 'razorpay' ? 'razorpay' : 'manual',
         )
     );
     $purchaseId = (int) db()->lastInsertId();
@@ -653,6 +792,91 @@ function handle_create_purchase($user)
     $payload['currency'] = 'INR';
     $payload['unit_price_inr'] = $unitPrice;
     json_ok($payload, 201);
+}
+
+function handle_fail_purchase($user)
+{
+    $data = request_json();
+    $purchaseId = isset($data['id']) ? (int) $data['id'] : 0;
+    $reason = optional_string($data, 'reason', 240);
+    $purchase = db_one('SELECT * FROM plan_purchases WHERE id = ? AND shop_id = ?', array($purchaseId, $user['shop_id']));
+    if (!$purchase) {
+        json_error(404, 'Purchase not found');
+    }
+    if ($purchase['status'] === 'paid') {
+        json_error(422, 'Paid purchases cannot be marked failed');
+    }
+    db_exec(
+        "UPDATE plan_purchases SET status = 'failed', notes = CONCAT(COALESCE(notes,''), ?) WHERE id = ?",
+        array(' | fail: ' . ($reason ?: 'checkout_failed'), $purchaseId)
+    );
+    json_ok(purchase_to_array(db_one('SELECT * FROM plan_purchases WHERE id = ?', array($purchaseId))));
+}
+
+function handle_redeem_promo($user)
+{
+    ensure_ops_schema();
+    $data = request_json();
+    $code = strtoupper(preg_replace('/\s+/', '', require_string($data, 'code', 2, 40)));
+    $pdo = db();
+    $pdo->beginTransaction();
+    try {
+        $promo = db_one('SELECT * FROM promo_codes WHERE code = ? FOR UPDATE', array($code));
+        if (!$promo || empty($promo['is_active'])) {
+            json_error(404, 'Promo code not found');
+        }
+        if (!empty($promo['starts_at']) && strtotime($promo['starts_at'] . ' UTC') > time()) {
+            json_error(422, 'Promo code is not active yet');
+        }
+        if (!empty($promo['ends_at']) && strtotime($promo['ends_at'] . ' UTC') < time()) {
+            json_error(422, 'Promo code has expired');
+        }
+        if ((int) $promo['max_redemptions'] > 0 && (int) $promo['redemption_count'] >= (int) $promo['max_redemptions']) {
+            json_error(422, 'Promo code redemption limit reached');
+        }
+        if (db_one('SELECT id FROM promo_redemptions WHERE promo_id = ? AND shop_id = ?', array($promo['id'], $user['shop_id']))) {
+            json_error(409, 'This shop already redeemed this promo');
+        }
+
+        $shop = get_shop($user['shop_id'], true);
+        $purchaseStub = array(
+            'id' => null,
+            'is_unlimited' => (int) $promo['is_unlimited'],
+            'validity_days' => (int) $promo['validity_days'],
+            'tag_credits' => (int) $promo['tag_credits'],
+        );
+        // Temporary purchase id for ledger linkage: create a zero-amount paid purchase row.
+        db_exec(
+            'INSERT INTO plan_purchases
+                (shop_id, plan_id, amount_inr, tag_credits, validity_days, is_unlimited, status, payment_method, notes, receipt_note, paid_at)
+             VALUES (?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?)',
+            array(
+                $user['shop_id'],
+                (int) db_one('SELECT id FROM billing_plans ORDER BY id ASC LIMIT 1')['id'],
+                (int) $promo['tag_credits'],
+                (int) $promo['validity_days'],
+                (int) $promo['is_unlimited'],
+                'paid',
+                'promo',
+                'promo=' . $promo['code'],
+                $promo['code'],
+                now_utc(),
+            )
+        );
+        $purchaseId = (int) $pdo->lastInsertId();
+        $purchaseStub['id'] = $purchaseId;
+        grant_purchase_to_shop($shop, $purchaseStub);
+        db_exec(
+            'INSERT INTO promo_redemptions (promo_id, shop_id, user_id) VALUES (?, ?, ?)',
+            array($promo['id'], $user['shop_id'], $user['id'])
+        );
+        db_exec('UPDATE promo_codes SET redemption_count = redemption_count + 1 WHERE id = ?', array($promo['id']));
+        $pdo->commit();
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        throw $e;
+    }
+    json_ok(billing_summary(get_shop($user['shop_id'])));
 }
 
 function handle_confirm_purchase($user)
@@ -726,6 +950,7 @@ function handle_admin_update_plan($admin)
         'UPDATE billing_plans SET name = ?, description = ?, price_inr = ?, tag_credits = ?, validity_days = ?, is_unlimited = ?, is_active = ?, sort_order = ? WHERE id = ?',
         array($name, $description, $price, $credits, $days, $unlimited, $active, $sort, $plan['id'])
     );
+    log_admin_activity($admin, 'plan.update', 'billing_plan', $plan['id'], $plan['code'] . ' / ' . $name);
     json_ok(plan_to_array(db_one('SELECT * FROM billing_plans WHERE id = ?', array($plan['id']))));
 }
 
@@ -793,5 +1018,6 @@ function handle_admin_adjust_credits($admin)
         $pdo->rollBack();
         throw $e;
     }
+    log_admin_activity($admin, 'credits.adjust', 'shop', $shopId, $note);
     json_ok(admin_tenant_response(get_shop($shopId)));
 }

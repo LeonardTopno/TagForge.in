@@ -52,8 +52,13 @@ require_once __DIR__ . '/schema.php';
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/mail.php';
 require_once __DIR__ . '/razorpay.php';
+require_once __DIR__ . '/platform.php';
+require_once __DIR__ . '/admin_api.php';
+require_once __DIR__ . '/ops_api.php';
 
 csrf_token();
 ensure_upload_dirs();
 ensure_password_reset_schema();
+ensure_admin_platform_schema();
+ensure_ops_schema();
 sync_billing_plans();

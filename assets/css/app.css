@@ -1107,6 +1107,313 @@ th {
   color: #b8c4ce;
 }
 
+.admin-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.admin-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  color: #20313f;
+  border: 1px solid #d7dde4;
+  border-radius: 8px;
+  background: #ffffff;
+  font-weight: 650;
+}
+
+.admin-nav-btn:hover,
+.admin-nav-btn.is-active {
+  color: #0f766e;
+  border-color: #99f6e4;
+  background: #ecfdf5;
+}
+
+.admin-view {
+  display: grid;
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.admin-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-stat {
+  padding: 16px 18px;
+  border: 1px solid #d7dde4;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(40, 53, 65, 0.06);
+}
+
+.admin-stat span {
+  display: block;
+  color: #68737f;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.admin-stat strong {
+  display: block;
+  margin-top: 8px;
+  color: #173042;
+  font-size: clamp(20px, 3vw, 26px);
+  font-weight: 800;
+}
+
+.admin-filters {
+  padding: 16px;
+  border: 1px solid #d7dde4;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.admin-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.admin-dl {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.admin-dl dt {
+  color: #68737f;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.admin-dl dd {
+  margin: 4px 0 0;
+  font-weight: 650;
+  word-break: break-word;
+}
+
+.admin-logo-preview {
+  display: block;
+  max-width: 160px;
+  max-height: 72px;
+  margin-bottom: 14px;
+  object-fit: contain;
+}
+
+.admin-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  color: #20313f;
+  border: 1px solid #d7dde4;
+  border-radius: 999px;
+  background: #f8fafc;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.admin-badge-ok {
+  color: #0f766e;
+  border-color: #99f6e4;
+  background: #ecfdf5;
+}
+
+.admin-badge-warn {
+  color: #92400e;
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+.admin-badge-danger {
+  color: #991b1b;
+  border-color: #fecaca;
+  background: #fff1f2;
+}
+
+.admin-badge-muted {
+  color: #64748b;
+  border-color: #e2e8f0;
+  background: #f1f5f9;
+}
+
+.admin-portal-shell .ghost-button {
+  margin-top: 0;
+  color: #20313f;
+  border: 1px solid #d7dde4;
+  background: #ffffff;
+}
+
+.admin-portal-shell .ghost-button:hover {
+  background: #eef2f6;
+}
+
+.admin-portal-shell .danger-button,
+.admin-portal-shell .secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+.admin-portal-shell .danger-button {
+  color: #fff;
+  border: 1px solid #b91c1c;
+  background: #dc2626;
+}
+
+.admin-portal-shell .secondary-button {
+  color: #20313f;
+  border: 1px solid #d7dde4;
+  background: #ffffff;
+}
+
+.admin-portal-shell .muted {
+  color: #68737f;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.admin-view .table-panel tbody tr[data-action] {
+  cursor: pointer;
+}
+
+.admin-view .table-panel tbody tr[data-action]:hover {
+  background: #ecfdf5;
+}
+
+.admin-notes-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.admin-note {
+  padding: 12px 14px;
+  border: 1px solid #d7dde4;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.admin-note p {
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+}
+
+.admin-note-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  color: #68737f;
+  font-size: 12px;
+}
+
+.admin-note-meta .ghost-button {
+  min-height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+  margin-left: auto;
+}
+
+.announcement-banner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: baseline;
+  margin-bottom: 12px;
+  padding: 12px 16px;
+  color: #7c2d12;
+  border: 1px solid #fdba74;
+  border-radius: 8px;
+  background: #fff7ed;
+}
+
+.announcement-banner strong {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.admin-mail-preview {
+  margin-top: 14px;
+  padding: 12px;
+  max-height: 320px;
+  overflow: auto;
+  border: 1px solid #d7dde4;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.support-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 12px 16px;
+  color: #0f172a;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  background: #fffbeb;
+}
+
+.support-banner.is-readonly {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+
+.support-banner strong {
+  display: block;
+}
+
+.support-banner span {
+  display: block;
+  margin-top: 2px;
+  color: #475569;
+  font-size: 13px;
+}
+
+.support-banner button {
+  min-height: 38px;
+  padding: 0 14px;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  font-weight: 650;
+}
+
+.app-shell.support-readonly .primary-button,
+.app-shell.support-readonly form button[type="submit"],
+.app-shell.support-readonly [data-action="buy-plan"],
+.app-shell.support-readonly [data-action="save"],
+.app-shell.support-readonly [data-action="save-print"],
+.app-shell.support-readonly [data-action="reprint"],
+.app-shell.support-readonly [data-action="delete-logo"],
+.app-shell.support-readonly [data-action="delete-item"] {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
 @media (max-width: 1100px) {
   .billing-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1116,8 +1423,13 @@ th {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .admin-tenant-grid {
+  .admin-tenant-grid,
+  .admin-detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .admin-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -1209,10 +1521,21 @@ th {
   .plan-grid,
   .plan-grid.single-plan,
   .admin-tenant-grid,
+  .admin-detail-grid,
+  .admin-stat-grid,
   .tenant-summary,
   .plan-card dl,
   .item-add-row {
     grid-template-columns: 1fr;
+  }
+
+  .admin-nav {
+    flex-direction: column;
+  }
+
+  .admin-nav-btn {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .button-row > button,

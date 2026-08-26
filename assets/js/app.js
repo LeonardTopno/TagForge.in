@@ -13,6 +13,8 @@
   const state = {
     user: null,
     shop: null,
+    support: null,
+    platform: null,
     view: 'create',
     settingsSection: 'shop',
     stats: null,
@@ -37,6 +39,7 @@
     newItemName: '',
     editingId: null,
     editingName: '',
+    promoCode: '',
   };
 
   const root = document.getElementById('app');
@@ -170,6 +173,36 @@
   function acceptAuth(auth) {
     state.user = auth.user;
     state.shop = auth.shop;
+    state.support = auth.support || null;
+    state.platform = auth.platform || null;
+  }
+
+  function announcementBanner() {
+    const message = state.platform && state.platform.announcement ? state.platform.announcement : '';
+    if (!message) return '';
+    return '<div class="announcement-banner"><strong>Notice</strong><span>' + escapeHtml(message) + '</span></div>';
+  }
+
+  function isSupportReadonly() {
+    return !!(state.support && state.support.readonly);
+  }
+
+  function supportBanner() {
+    if (!state.support) return '';
+    const modeLabel = state.support.readonly ? 'Read-only support view' : 'Timed support edit session';
+    const expires = state.support.expires_at ? formatDateTime(state.support.expires_at) : '';
+    return (
+      '<div class="support-banner' + (state.support.readonly ? ' is-readonly' : '') + '">' +
+        '<div>' +
+          '<strong>' + escapeHtml(modeLabel) + '</strong>' +
+          '<span>Viewing as ' + escapeHtml(state.shop && state.shop.name ? state.shop.name : 'shop') +
+          (state.support.admin_name ? ' · started by ' + escapeHtml(state.support.admin_name) : '') +
+          (expires ? ' · ends ' + escapeHtml(expires) : '') +
+          '</span>' +
+        '</div>' +
+        '<button type="button" data-action="end-support"><i class="bi bi-box-arrow-left"></i> Exit support view</button>' +
+      '</div>'
+    );
   }
 
   function refreshData() {
@@ -386,8 +419,13 @@
           '<div><span>Monthly plan</span><strong>Rs. ' + monthlyPrice.toLocaleString('en-IN') + '</strong></div>' +
         '</div>' +
         statusCard +
-        '<p class="settings-help">New shops get <strong>20 free tags for ' + freeDays + ' days</strong>. After that, buy Monthly Unlimited at <strong>Rs. 599/month</strong> and choose how many months to purchase.</p>' +
+        '<p class="settings-help">New shops get <strong>' + (billing ? billing.free_registration_credits : 20) + ' free tags for ' + freeDays + ' days</strong>. Buy Monthly Unlimited or redeem a promo code below.</p>' +
         (state.billingMessage ? '<div class="success-banner">' + escapeHtml(state.billingMessage) + '</div>' : '') +
+        '<article class="entry-panel"><div class="panel-title"><h2>Promo / trial code</h2></div>' +
+          '<form data-action="redeem-promo" class="form-grid compact">' +
+            '<label>Code<input class="form-control" name="code" value="' + escapeHtml(state.promoCode || '') + '" placeholder="TRIAL50" required></label>' +
+            '<button class="secondary-button" type="submit"><i class="bi bi-ticket-perforated"></i> Redeem</button>' +
+          '</form></article>' +
         '<div class="plan-grid single-plan">' + planCard + '</div>' +
         '<section class="table-panel"><div class="panel-title"><h2>Credit Ledger</h2><span>' + state.ledger.length + ' entries</span></div>' +
           '<table class="table"><thead><tr><th>Date</th><th>Type</th><th>Credits</th><th>Balance</th><th>Description</th></tr></thead><tbody>' + ledger + '</tbody></table>' +
@@ -495,7 +533,9 @@
     else body = renderSettings();
 
     return (
-      '<div class="app-shell' + (state.navOpen ? ' nav-open' : '') + '">' +
+      '<div class="app-shell' + (state.navOpen ? ' nav-open' : '') + (isSupportReadonly() ? ' support-readonly' : '') + '">' +
+        announcementBanner() +
+        supportBanner() +
         '<button type="button" class="nav-toggle" data-action="toggle-nav" aria-expanded="' + state.navOpen + '" aria-controls="shop-sidebar">' +
           '<i class="bi ' + (state.navOpen ? 'bi-x-lg' : 'bi-list') + '"></i><span>' + (state.navOpen ? 'Close menu' : 'Menu') + '</span>' +
         '</button>' +
@@ -504,7 +544,7 @@
           '<aside id="shop-sidebar" class="sidebar">' +
             '<button type="button" class="brand brand-home" data-action="go" data-view="create">' +
               logo +
-              '<div><strong>' + escapeHtml(shop.name) + '</strong><small>' + escapeHtml(state.user.name) + '</small></div>' +
+              '<div><strong>' + escapeHtml(shop.name) + '</strong><small>' + escapeHtml(state.user.name) + (state.support ? ' · Support' : '') + '</small></div>' +
             '</button>' +
             '<nav>' +
               navButton('create', 'bi-tag', 'Create Tag') +
@@ -515,7 +555,9 @@
               '</div>' +
               navButton('billing', 'bi-currency-rupee', 'Credits') +
             '</nav>' +
-            '<button class="ghost-button" type="button" data-action="logout"><i class="bi bi-box-arrow-right"></i> Sign out</button>' +
+            (state.support
+              ? '<button class="ghost-button" type="button" data-action="end-support"><i class="bi bi-box-arrow-left"></i> Exit support view</button>'
+              : '<button class="ghost-button" type="button" data-action="logout"><i class="bi bi-box-arrow-right"></i> Sign out</button>') +
           '</aside>' +
           '<main class="workspace">' +
             '<section class="topbar"><div><h1>' + viewTitle() + '</h1></div></section>' +
@@ -679,6 +721,9 @@
           },
           modal: {
             ondismiss: function () {
+              if (api.failPurchase) {
+                api.failPurchase(purchase.id, 'Payment cancelled').catch(function () {});
+              }
               reject(new Error('Payment cancelled'));
             },
           },
@@ -689,6 +734,9 @@
           const detail = response && response.error && response.error.description
             ? response.error.description
             : 'Payment failed';
+          if (api.failPurchase) {
+            api.failPurchase(purchase.id, detail).catch(function () {});
+          }
           reject(new Error(detail));
         });
         rzp.open();
@@ -768,6 +816,7 @@
       api.logout().finally(function () {
         state.user = null;
         state.shop = null;
+        state.support = null;
         state.stats = null;
         state.tags = [];
         state.plans = [];
@@ -775,6 +824,26 @@
         state.navOpen = false;
         render();
       });
+    }
+    if (action === 'end-support') {
+      api.supportEnd().finally(function () {
+        state.user = null;
+        state.shop = null;
+        state.support = null;
+        state.navOpen = false;
+        const adminUrl = (window.APP_CONFIG && window.APP_CONFIG.adminUrl) || '';
+        if (adminUrl) {
+          window.location.href = adminUrl;
+          return;
+        }
+        render();
+      });
+      return;
+    }
+    if (isSupportReadonly() && (action === 'save' || action === 'save-print' || action === 'test-print' || action === 'reprint' || action === 'buy-plan' || action === 'delete-logo' || action === 'delete-item' || action === 'save-item')) {
+      state.error = 'Support view is read-only. Start a timed session from admin to make changes.';
+      render();
+      return;
     }
     if (action === 'save') saveTag(false);
     if (action === 'save-print') saveTag(true);
@@ -863,6 +932,28 @@
     if (!form) return;
     event.preventDefault();
     const action = form.getAttribute('data-action');
+    if (action !== 'auth' && isSupportReadonly()) {
+      state.error = 'Support view is read-only. Start a timed session from admin to make changes.';
+      render();
+      return;
+    }
+    if (action === 'redeem-promo') {
+      const code = String(data.get('code') || '');
+      state.busy = true;
+      state.error = '';
+      render();
+      api.redeemPromo(code).then(function () {
+        state.busy = false;
+        state.promoCode = '';
+        state.billingMessage = 'Promo redeemed';
+        return refreshData();
+      }).then(render).catch(function (err) {
+        state.busy = false;
+        state.error = err.message;
+        render();
+      });
+      return;
+    }
     if (action === 'auth') {
       const data = new FormData(form);
       state.busy = true;
@@ -1039,15 +1130,41 @@
 
   const resetParams = new URLSearchParams(window.location.search || '');
   const resetFromUrl = resetParams.get('reset');
+  const supportFromUrl = resetParams.get('support');
   if (resetFromUrl) {
     state.authMode = 'reset';
     state.resetToken = resetFromUrl;
   }
 
-  api.me().then(function (auth) {
-    acceptAuth(auth);
-    return refreshData();
-  }).catch(function () {
-    state.user = null;
-  }).then(render);
+  function clearSupportQuery() {
+    if (!supportFromUrl) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete('support');
+    window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+  }
+
+  function boot() {
+    if (supportFromUrl) {
+      return api.supportStart(supportFromUrl).then(function (auth) {
+        clearSupportQuery();
+        acceptAuth(auth);
+        return refreshData();
+      }).catch(function (err) {
+        clearSupportQuery();
+        state.user = null;
+        state.support = null;
+        state.error = err.message || 'Could not start support view';
+      }).then(render);
+    }
+
+    return api.me().then(function (auth) {
+      acceptAuth(auth);
+      return refreshData();
+    }).catch(function () {
+      state.user = null;
+      state.support = null;
+    }).then(render);
+  }
+
+  boot();
 })();

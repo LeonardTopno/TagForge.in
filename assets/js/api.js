@@ -189,14 +189,35 @@ const api = {
   confirmPurchase: function (payload) {
     return apiRequest('billing/purchases/confirm', { method: 'POST', body: JSON.stringify(payload) });
   },
+  failPurchase: function (id, reason) {
+    return apiRequest('billing/purchases/fail', {
+      method: 'POST',
+      body: JSON.stringify({ id: id, reason: reason || null }),
+    });
+  },
+  redeemPromo: function (code) {
+    return apiRequest('billing/promo', { method: 'POST', body: JSON.stringify({ code: code }) });
+  },
+  platform: function () {
+    return apiRequest('platform');
+  },
   adminPlans: function () {
     return apiRequest('admin/plans');
+  },
+  createAdminPlan: function (plan) {
+    return apiRequest('admin/plans', { method: 'POST', body: JSON.stringify(plan) });
   },
   updateAdminPlan: function (plan) {
     return apiRequest('admin/plans', { method: 'PUT', body: JSON.stringify(plan) });
   },
-  adminTenants: function () {
-    return apiRequest('admin/tenants');
+  adminDashboard: function () {
+    return apiRequest('admin/dashboard');
+  },
+  adminTenants: function (params) {
+    return apiRequest('admin/tenants', { params: params || {} });
+  },
+  adminTenantDetail: function (shopId) {
+    return apiRequest('admin/tenants/detail', { params: { id: shopId } });
   },
   adminTenantLedger: function (shopId) {
     return apiRequest('admin/tenants/ledger', { params: { id: shopId } });
@@ -204,5 +225,149 @@ const api = {
   adjustTenantCredits: function (shopId, payload) {
     payload.shop_id = shopId;
     return apiRequest('admin/tenants/credit-adjustments', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  setTenantStatus: function (shopId, isActive, reason) {
+    return apiRequest('admin/tenants/status', {
+      method: 'POST',
+      body: JSON.stringify({ shop_id: shopId, is_active: !!isActive, suspended_reason: reason || null }),
+    });
+  },
+  recordOfflinePayment: function (payload) {
+    return apiRequest('admin/tenants/offline-payment', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  adminPurchases: function (params) {
+    return apiRequest('admin/purchases', { params: params || {} });
+  },
+  refundPurchase: function (id, note, revokeBenefits) {
+    return apiRequest('admin/purchases/refund', {
+      method: 'POST',
+      body: JSON.stringify({ id: id, note: note, revoke_benefits: revokeBenefits !== false }),
+    });
+  },
+  adminFailAlerts: function () {
+    return apiRequest('admin/purchases/fail-alerts');
+  },
+  openPurchaseReceipt: function (id) {
+    const url = apiBaseUrl() + '/api.php?r=' + encodeURIComponent('admin/purchases/receipt') + '&id=' + encodeURIComponent(id);
+    window.open(url, '_blank', 'noopener');
+  },
+  adminUsers: function () {
+    return apiRequest('admin/users');
+  },
+  createAdminUser: function (payload) {
+    return apiRequest('admin/users', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  resetAdminPassword: function (payload) {
+    return apiRequest('admin/users/reset-password', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  impersonateTenant: function (shopId, mode, durationMinutes) {
+    return apiRequest('admin/tenants/impersonate', {
+      method: 'POST',
+      body: JSON.stringify({
+        shop_id: shopId,
+        mode: mode || 'readonly',
+        duration_minutes: durationMinutes || 30,
+      }),
+    });
+  },
+  updateTenantProfile: function (payload) {
+    return apiRequest('admin/tenants/profile', { method: 'PUT', body: JSON.stringify(payload) });
+  },
+  adminTenantNotes: function (shopId) {
+    return apiRequest('admin/tenants/notes', { params: { id: shopId } });
+  },
+  addTenantNote: function (shopId, body) {
+    return apiRequest('admin/tenants/notes', {
+      method: 'POST',
+      body: JSON.stringify({ shop_id: shopId, body: body }),
+    });
+  },
+  deleteTenantNote: function (noteId) {
+    return apiRequest('admin/tenants/notes', {
+      method: 'DELETE',
+      body: JSON.stringify({ id: noteId }),
+    });
+  },
+  sendOwnerResetLink: function (shopId) {
+    return apiRequest('admin/tenants/send-reset', {
+      method: 'POST',
+      body: JSON.stringify({ shop_id: shopId }),
+    });
+  },
+  exportTenantsCsv: function () {
+    const headers = new Headers();
+    if (window.CSRF_TOKEN) headers.set('X-CSRF-Token', window.CSRF_TOKEN);
+    const url = apiBaseUrl() + '/api.php?r=' + encodeURIComponent('admin/tenants/export');
+    return fetch(url, {
+      method: 'GET',
+      credentials: apiCredentials(),
+      headers: headers,
+    }).then(function (response) {
+      if (!response.ok) {
+        return response.json().catch(function () {
+          return { detail: 'Export failed' };
+        }).then(function (payload) {
+          throw new Error((payload && payload.detail) || 'Export failed');
+        });
+      }
+      return response.blob().then(function (blob) {
+        const link = document.createElement('a');
+        const objectUrl = URL.createObjectURL(blob);
+        link.href = objectUrl;
+        link.download = 'tagforge-tenants.csv';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(objectUrl);
+      });
+    });
+  },
+  supportStart: function (token) {
+    return apiRequest('auth/support-start', {
+      method: 'POST',
+      body: JSON.stringify({ token: token }),
+    });
+  },
+  supportEnd: function () {
+    return apiRequest('auth/support-end', { method: 'POST', body: JSON.stringify({}) });
+  },
+  verify2fa: function (payload) {
+    return apiRequest('auth/verify-2fa', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  adminPromos: function () {
+    return apiRequest('admin/promos');
+  },
+  createAdminPromo: function (payload) {
+    return apiRequest('admin/promos', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  updateAdminPromo: function (payload) {
+    return apiRequest('admin/promos', { method: 'PUT', body: JSON.stringify(payload) });
+  },
+  adminSettings: function () {
+    return apiRequest('admin/settings');
+  },
+  saveAdminSettings: function (payload) {
+    return apiRequest('admin/settings', { method: 'PUT', body: JSON.stringify(payload) });
+  },
+  adminActivity: function () {
+    return apiRequest('admin/activity');
+  },
+  adminLoginAudit: function (failedOnly) {
+    return apiRequest('admin/login-audit', { params: failedOnly ? { failed: 1 } : {} });
+  },
+  adminMailOutbox: function () {
+    return apiRequest('admin/mail-outbox');
+  },
+  adminMailOutboxRead: function (file) {
+    return apiRequest('admin/mail-outbox/read', { params: { file: file } });
+  },
+  adminHealth: function () {
+    return apiRequest('admin/health');
+  },
+  admin2faStatus: function () {
+    return apiRequest('admin/security/2fa');
+  },
+  admin2faSetup: function (payload) {
+    return apiRequest('admin/security/2fa', { method: 'POST', body: JSON.stringify(payload) });
   },
 };
