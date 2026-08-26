@@ -228,6 +228,7 @@ function frontend_boot_config($pageScript = 'app.js', $surface = 'shop')
         'page' => $pageScript === 'admin.js' ? 'admin' : 'shop',
         'appName' => app_config('app_name', 'TagForge'),
         'appTagline' => app_config('app_tagline', 'Print tags. Run your shop.'),
+        'appVersion' => function_exists('app_version') ? app_version() : '0.0.0',
         'shopUrl' => $urls['shop'] !== '' ? $urls['shop'] : '',
         'adminUrl' => $urls['admin'] !== '' ? $urls['admin'] : '',
         'appUrl' => $urls['app'] !== '' ? $urls['app'] : '',
