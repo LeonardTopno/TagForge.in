@@ -596,7 +596,7 @@ label {
 /* Actual Preview only — face + tail guide (not printed). */
 .tag-stage .print-tag .tag-printable-face {
   border: 1px solid #111827;
-  border-radius: 1mm 0 0 1mm;
+  border-radius: 1mm;
 }
 
 .tag-stage .print-tag .tag-fold-mark {
