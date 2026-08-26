@@ -193,7 +193,7 @@ $a = file_get_contents($root.'/api.php');
 if (strpos($h, 'function assert_shop_not_suspended') === false) { fwrite(STDERR, "helpers missing assert\n"); exit(1); }
 if (strpos($g, 'function assert_shop_not_suspended') === false) { fwrite(STDERR, "guards missing assert\n"); exit(1); }
 if (strpos($a, 'auth_guards.php') === false) { fwrite(STDERR, "api.php does not load auth_guards\n"); exit(1); }
-if (strpos($a, '2026-08-26-cpanel-force') === false) { fwrite(STDERR, "deploy marker missing\n"); exit(1); }
+if (strpos($a, '2026-08-27-schema-column-check') === false) { fwrite(STDERR, "deploy marker missing\n"); exit(1); }
 echo "FULL FILE CHECK OK\n";
 PHP;
 $tmp = tempnam(sys_get_temp_dir(), 'tfauth');
