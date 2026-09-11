@@ -677,38 +677,28 @@ label {
 }
 
 .tag-weight-grid {
-  display: grid;
-  grid-template-columns: minmax(9.5mm, 1.15fr) minmax(6.5mm, 1fr);
-  align-items: center;
-  column-gap: 0.5mm;
-  row-gap: 0.2mm;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.2mm;
   width: 100%;
   max-width: 100%;
   font-family: Arial, Helvetica, sans-serif;
-  font-weight: 600;
+  font-weight: 700;
   font-variant-numeric: tabular-nums lining-nums;
   letter-spacing: 0;
   font-size: 0.92em;
   line-height: 1.25;
 }
 
-.tag-weight-label {
+.tag-weight-row {
+  display: block;
   overflow: visible;
   white-space: nowrap;
   font-family: inherit;
-  font-weight: 600;
+  font-weight: inherit;
   line-height: 1.25;
-}
-
-.tag-weight-value {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: clip;
-  text-align: right;
-  font-family: inherit;
-  font-weight: 700;
-  line-height: 1.25;
-  font-variant-numeric: tabular-nums lining-nums;
 }
 
 .table-panel {
@@ -1900,13 +1890,13 @@ th {
   }
 
   #print-root .tag-weight-grid {
-    display: grid !important;
+    display: flex !important;
+    flex-direction: column !important;
     line-height: 1.25 !important;
-    row-gap: 0.2mm !important;
+    gap: 0.2mm !important;
   }
 
-  #print-root .tag-weight-label,
-  #print-root .tag-weight-value {
+  #print-root .tag-weight-row {
     line-height: 1.25 !important;
   }
 
