@@ -164,9 +164,9 @@
         '<div class="tag-printable-face">' +
           '<div class="tag-panel tag-panel-left" aria-label="Left panel: weights">' +
             '<div class="tag-weight-grid">' +
-              '<span class="tag-weight-label">Grs.Wt:</span><strong class="tag-weight-value">' + formatWeight(tag.gross_weight) + '</strong>' +
-              '<span class="tag-weight-label">Stn.Wt:</span><strong class="tag-weight-value">' + formatWeight(tag.stone_weight) + '</strong>' +
-              '<span class="tag-weight-label">Nt.Wt:</span><strong class="tag-weight-value">' + formatWeight(tag.net_weight) + '</strong>' +
+              '<span class="tag-weight-row">Grs.Wt: ' + formatWeight(tag.gross_weight) + '</span>' +
+              '<span class="tag-weight-row">Stn.Wt: ' + formatWeight(tag.stone_weight) + '</span>' +
+              '<span class="tag-weight-row">Nt.Wt: ' + formatWeight(tag.net_weight) + '</span>' +
             '</div>' +
           '</div>' +
           '<div class="tag-fold-mark" aria-hidden="true" title="Fold line"></div>' +
