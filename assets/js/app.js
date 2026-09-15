@@ -147,13 +147,11 @@
 
   // Preview shows face + tail guide. Print uses face size only (matches TVS stock 64×12).
   const TAG_TAIL_MM = 18;
-  // LP 46 NEO often clips the top line on the physical face while leaving empty bottom.
-  // Pad content down inside the page (do not shift the whole 12 mm box with top:, or the
-  // bottom gets clipped by overflow). Shop Y still fine-tunes via top (+ down / − up).
+  // Small top pad so Grs.Wt clears the face edge without pushing Nt.Wt off a 12 mm tag.
+  // Do NOT shift the whole page left — that clipped "Grs."/"Stn." to ".Wt"/"Wt".
   const TVS_VERTICAL_COMPENSATION_MM = 0;
-  const TVS_PRINT_PAD_TOP_MM = 3.5;
-  // Physical face often shows empty left; nudge print content left inside the page.
-  const TVS_PRINT_SHIFT_LEFT_MM = 6;
+  const TVS_PRINT_PAD_TOP_MM = 1.2;
+  const TVS_PRINT_SHIFT_LEFT_MM = 0;
 
   function printOffsetsMm(shop, forPrint) {
     const x = Number(shop && shop.horizontal_offset_mm) || 0;
@@ -167,6 +165,16 @@
     };
   }
 
+  function printFontSizePt(shop, forPrint) {
+    const requested = Number(shop && shop.font_size_pt) || 8;
+    if (!forPrint) return requested;
+    const height = Number(shop && shop.tag_height_mm) || 18;
+    // 10 pt on 12 mm + padding cannot fit three weight lines; cap for print.
+    if (height <= 12) return Math.min(requested, 7);
+    if (height <= 15) return Math.min(requested, 8);
+    return requested;
+  }
+
   function printableTagHtml(tag, shop, forPrint) {
     const faceWidth = Number(shop.tag_width_mm) || 64;
     const height = shop.tag_height_mm || 18;
@@ -176,7 +184,7 @@
     const style = [
       'width:' + boxWidth + 'mm',
       'height:' + height + 'mm',
-      'font-size:' + shop.font_size_pt + 'pt',
+      'font-size:' + printFontSizePt(shop, forPrint) + 'pt',
       'left:' + offsets.x + 'mm',
       'top:' + offsets.y + 'mm',
       'position:relative',
@@ -511,7 +519,7 @@
             '<div><span>Manufacturer / model</span><strong>TVS Electronics · LP 46 NEO</strong></div>' +
             '<div><span>Tag paper type</span><strong>Jewellery hang tag · single-side print, fold at centre (sticker back)</strong></div></div>' +
           '<p class="settings-help">Both panels print on the same face. Fold on the centre mark so the sticker backs meet. Select <strong>TVS LP 46 NEO</strong> in the browser print dialog (Margins <strong>None</strong>, Scale <strong>100%</strong>).</p>' +
-          '<p class="settings-help">Driver stock must stay <strong>64.0 × 12.0 mm</strong>, <strong>Portrait</strong>, Labels With Gaps (gap ~3 mm). Advanced Options H/V <strong>0.0 mm</strong>. Chrome → More settings: Margins <strong>None</strong>, Scale <strong>100%</strong>. Print uses one face only (no fold/tail) so weights are not duplicated, pads ~3.5 mm down and shifts ~6 mm left; fine-tune with X/Y.</p>' +
+          '<p class="settings-help">Driver stock: <strong>64.0 × 12.0 mm</strong>, <strong>Portrait</strong>, Labels With Gaps (~3 mm). Advanced Options H/V <strong>0.0</strong>. Chrome → Margins <strong>None</strong>, Scale <strong>100%</strong>. Print font is capped at <strong>7 pt</strong> when height is 12 mm so all three weights fit. Fine-tune with X/Y (+ right/down, − left/up).</p>' +
           '<form data-action="save-tag" class="form-grid compact">' +
             '<label>Tag prefix<input class="form-control" name="tag_prefix" value="' + escapeHtml(draft.tag_prefix) + '"></label>' +
             '<label>Width mm (face)<input class="form-control" name="tag_width_mm" type="number" step="0.1" value="' + escapeHtml(draft.tag_width_mm) + '"></label>' +
@@ -682,12 +690,12 @@
         '#print-root .print-tag { display: block !important; position: absolute !important; width: ' + width + 'mm !important; height: ' + height + 'mm !important; left: ' + offsets.x + 'mm !important; top: ' + offsets.y + 'mm !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; background: #fff !important; border: 0 !important; box-shadow: none !important; }' +
         '#print-root .tag-printable-face { display: grid !important; grid-template-columns: 1.15fr 0.85fr !important; width: 100% !important; height: 100% !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; background: #fff !important; border: 0 !important; }' +
         '#print-root .tag-fold-mark, #print-root .tag-tail { display: none !important; }' +
-        '#print-root .tag-panel { display: grid !important; align-items: start !important; padding: ' + TVS_PRINT_PAD_TOP_MM + 'mm 0.4mm 0.2mm 0 !important; overflow: hidden !important; }' +
-        '#print-root .tag-panel-left { justify-items: start !important; padding-left: 0 !important; }' +
+        '#print-root .tag-panel { display: grid !important; align-items: center !important; padding: ' + TVS_PRINT_PAD_TOP_MM + 'mm 0.5mm ' + TVS_PRINT_PAD_TOP_MM + 'mm 0.4mm !important; overflow: hidden !important; }' +
+        '#print-root .tag-panel-left { justify-items: start !important; padding-left: 0.4mm !important; }' +
         '#print-root .tag-panel-right { justify-items: center !important; }' +
-        '#print-root .tag-weight-grid { display: flex !important; flex-direction: column !important; align-items: flex-start !important; gap: 0.15mm !important; width: auto !important; max-width: 100% !important; }' +
-        '#print-root .tag-weight-row { display: block !important; white-space: nowrap !important; overflow: hidden !important; line-height: 1.15 !important; }' +
-        '#print-root .tag-back { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: flex-start !important; gap: 0.3mm !important; padding: 0 !important; }' +
+        '#print-root .tag-weight-grid { display: flex !important; flex-direction: column !important; align-items: flex-start !important; gap: 0.2mm !important; width: auto !important; max-width: 100% !important; }' +
+        '#print-root .tag-weight-row { display: block !important; white-space: nowrap !important; overflow: visible !important; line-height: 1.2 !important; }' +
+        '#print-root .tag-back { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; gap: 0.35mm !important; padding: 0 !important; }' +
         '#print-root .tag-back-logo { display: block !important; max-width: 80% !important; max-height: 3.2mm !important; object-fit: contain !important; }' +
       '}';
   }
