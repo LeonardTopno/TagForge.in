@@ -145,11 +145,16 @@
     return '<span class="tag-back-number">B&amp;G</span>';
   }
 
-  function printableTagHtml(tag, shop) {
+  // Seagull/TVS Advanced Options often ships Vertical Offset at +3.0 mm, which shifts
+  // the ribbon down the 12 mm face and clips the bottom line. Cancel that here; fine-tune
+  // further with Tag Settings Y (positive = down, negative = up).
+  const TVS_VERTICAL_COMPENSATION_MM = -3;
+
+  function printableTagHtml(tag, shop, forPrint) {
     const width = shop.tag_width_mm || 64;
     const height = shop.tag_height_mm || 18;
     const x = Number(shop.horizontal_offset_mm) || 0;
-    const y = Number(shop.vertical_offset_mm) || 0;
+    const y = (Number(shop.vertical_offset_mm) || 0) + (forPrint ? TVS_VERTICAL_COMPENSATION_MM : 0);
     // Position with left/top (not transform) so print engines don't invent a 2nd page.
     const style = [
       'width:' + width + 'mm',
@@ -483,14 +488,15 @@
           '<div class="printer-info"><div><span>Label printer</span><strong>TVS LP 46 NEO</strong></div>' +
             '<div><span>Manufacturer / model</span><strong>TVS Electronics · LP 46 NEO</strong></div>' +
             '<div><span>Tag paper type</span><strong>Jewellery hang tag · single-side print, fold at centre (sticker back)</strong></div></div>' +
-          '<p class="settings-help">Both panels print on the same face. Fold on the centre mark so the sticker backs meet. Select <strong>TVS LP 46 NEO</strong> in the browser print dialog, then tune millimetre size and offsets below.</p>' +
+          '<p class="settings-help">Both panels print on the same face. Fold on the centre mark so the sticker backs meet. Select <strong>TVS LP 46 NEO</strong> in the browser print dialog (Margins <strong>None</strong>, Scale <strong>100%</strong>).</p>' +
+          '<p class="settings-help">In printer <strong>Advanced Options → Printing Position</strong>, keep Horizontal <strong>0.0 mm</strong>. Prefer Vertical <strong>0.0 mm</strong>. If Vertical stays at <strong>+3.0 mm</strong> (common Seagull default that pushes print down and clips Nt.Wt), each print already includes a <strong>−3 mm</strong> TagForge shift to cancel it. Use X/Y below only for fine tuning (+ moves down / right, − moves up / left).</p>' +
           '<form data-action="save-tag" class="form-grid compact">' +
             '<label>Tag prefix<input class="form-control" name="tag_prefix" value="' + escapeHtml(draft.tag_prefix) + '"></label>' +
             '<label>Width mm<input class="form-control" name="tag_width_mm" type="number" step="0.1" value="' + escapeHtml(draft.tag_width_mm) + '"></label>' +
             '<label>Height mm<input class="form-control" name="tag_height_mm" type="number" step="0.1" value="' + escapeHtml(draft.tag_height_mm) + '"></label>' +
             '<label>Font pt<input class="form-control" name="font_size_pt" type="number" step="0.1" value="' + escapeHtml(draft.font_size_pt) + '"></label>' +
             '<label>X offset mm<input class="form-control" name="horizontal_offset_mm" type="number" step="0.1" value="' + escapeHtml(draft.horizontal_offset_mm) + '"></label>' +
-            '<label>Y offset mm<input class="form-control" name="vertical_offset_mm" type="number" step="0.1" value="' + escapeHtml(draft.vertical_offset_mm) + '"></label>' +
+            '<label>Y offset mm (+ down)<input class="form-control" name="vertical_offset_mm" type="number" step="0.1" value="' + escapeHtml(draft.vertical_offset_mm) + '"></label>' +
             '<label class="check-row"><input type="checkbox" name="show_shop_name"' + (draft.show_shop_name ? ' checked' : '') + '> Show shop name</label>' +
             '<div class="button-row settings-actions full-row">' +
               '<button class="primary-button" type="submit"><i class="bi bi-floppy"></i> Save tag settings</button>' +
@@ -668,7 +674,7 @@
     state.activeTag = tag || draftTag();
     ensurePrintPageSize(shop);
     const printRoot = getPrintRoot();
-    printRoot.innerHTML = printableTagHtml(state.activeTag, shop);
+    printRoot.innerHTML = printableTagHtml(state.activeTag, shop, true);
 
     const cleanup = function () {
       window.removeEventListener('afterprint', cleanup);
