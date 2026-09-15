@@ -147,9 +147,11 @@
 
   // Preview shows face + tail guide. Print uses face size only (matches TVS stock 64×12).
   const TAG_TAIL_MM = 18;
-  // With driver Vertical Offset at 0.0 mm, do not apply an extra up-shift (a prior −3 mm
-  // compensation clipped Grs.Wt off the top of the 12 mm face). Positive Y = down.
+  // LP 46 NEO often clips the top line on the physical face while leaving empty bottom.
+  // Pad content down inside the page (do not shift the whole 12 mm box with top:, or the
+  // bottom gets clipped by overflow). Shop Y still fine-tunes via top (+ down / − up).
   const TVS_VERTICAL_COMPENSATION_MM = 0;
+  const TVS_PRINT_PAD_TOP_MM = 3.5;
 
   function printOffsetsMm(shop, forPrint) {
     const x = Number(shop && shop.horizontal_offset_mm) || 0;
@@ -506,7 +508,7 @@
             '<div><span>Manufacturer / model</span><strong>TVS Electronics · LP 46 NEO</strong></div>' +
             '<div><span>Tag paper type</span><strong>Jewellery hang tag · single-side print, fold at centre (sticker back)</strong></div></div>' +
           '<p class="settings-help">Both panels print on the same face. Fold on the centre mark so the sticker backs meet. Select <strong>TVS LP 46 NEO</strong> in the browser print dialog (Margins <strong>None</strong>, Scale <strong>100%</strong>).</p>' +
-          '<p class="settings-help">Driver stock must stay <strong>64.0 × 12.0 mm</strong> (printable face), <strong>Portrait</strong>, Labels With Gaps (keep gap ~3 mm). Advanced Options: Horizontal <strong>0.0 mm</strong>, Vertical <strong>0.0 mm</strong>. Chrome: Margins <strong>None</strong>, Scale <strong>100%</strong> (not Default). Fine-tune with X/Y (+ right/down, − left/up).</p>' +
+          '<p class="settings-help">Driver stock must stay <strong>64.0 × 12.0 mm</strong> (printable face), <strong>Portrait</strong>, Labels With Gaps (keep gap ~3 mm). Advanced Options: Horizontal <strong>0.0 mm</strong>, Vertical <strong>0.0 mm</strong>. Chrome: open More settings → Margins <strong>None</strong>, Scale <strong>100%</strong> (not Default). Print pads content ~3.5 mm down so Grs.Wt is not clipped; fine-tune with X/Y (+ right/down, − left/up).</p>' +
           '<form data-action="save-tag" class="form-grid compact">' +
             '<label>Tag prefix<input class="form-control" name="tag_prefix" value="' + escapeHtml(draft.tag_prefix) + '"></label>' +
             '<label>Width mm (face)<input class="form-control" name="tag_width_mm" type="number" step="0.1" value="' + escapeHtml(draft.tag_width_mm) + '"></label>' +
@@ -670,8 +672,10 @@
       '@media print {' +
         '@page { size: ' + width + 'mm ' + height + 'mm; margin: 0; }' +
         'html, body, #print-root { width: ' + width + 'mm !important; height: ' + height + 'mm !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; }' +
-        '#print-root .print-tag { display: block !important; width: ' + width + 'mm !important; height: ' + height + 'mm !important; left: ' + offsets.x + 'mm !important; top: ' + offsets.y + 'mm !important; border-radius: 1mm !important; overflow: hidden !important; background: #ffffff !important; }' +
+        '#print-root .print-tag { display: block !important; width: ' + width + 'mm !important; height: ' + height + 'mm !important; left: ' + offsets.x + 'mm !important; top: ' + offsets.y + 'mm !important; margin: 0 !important; border-radius: 1mm !important; overflow: hidden !important; background: #ffffff !important; }' +
         '#print-root .tag-printable-face { width: 100% !important; height: 100% !important; border-radius: 1mm !important; overflow: hidden !important; background: #ffffff !important; }' +
+        '#print-root .tag-panel { padding-top: ' + TVS_PRINT_PAD_TOP_MM + 'mm !important; padding-bottom: 0.2mm !important; align-items: start !important; }' +
+        '#print-root .tag-back { justify-content: flex-start !important; gap: 0.35mm !important; padding-top: 0 !important; }' +
         '#print-root .tag-tail { display: none !important; }' +
         '#print-root .tag-panel-left { padding-left: 0.3mm !important; justify-items: start !important; }' +
       '}';
