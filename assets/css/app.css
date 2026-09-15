@@ -566,6 +566,7 @@ label {
 }
 
 .tag-panel-left {
+  padding-left: 0.3mm;
   padding-right: 1mm;
   justify-items: start;
 }
@@ -1813,7 +1814,7 @@ th {
 
 @media print {
   @page {
-    size: 64mm 18mm;
+    size: 82mm 18mm;
     margin: 0;
   }
 
@@ -1823,7 +1824,7 @@ th {
 
   html,
   body {
-    width: 64mm !important;
+    width: 82mm !important;
     height: 18mm !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -1848,7 +1849,7 @@ th {
     position: absolute !important;
     left: 0 !important;
     top: 0 !important;
-    width: 64mm !important;
+    width: 82mm !important;
     height: 18mm !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -1857,10 +1858,10 @@ th {
   }
 
   #print-root .print-tag {
-    display: block !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: stretch !important;
     position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
     margin: 0 !important;
     overflow: hidden !important;
     border-radius: 1mm !important;
@@ -1877,16 +1878,24 @@ th {
   #print-root .tag-printable-face {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
-    width: 100% !important;
     height: 100% !important;
     border-radius: 1mm !important;
     overflow: hidden !important;
     background: #ffffff !important;
   }
 
-  #print-root .tag-fold-mark,
-  #print-root .tag-tail {
+  #print-root .tag-fold-mark {
     display: none !important;
+  }
+
+  #print-root .tag-tail {
+    display: block !important;
+    flex: 0 0 18mm !important;
+    width: 18mm !important;
+    height: 100% !important;
+    align-self: stretch !important;
+    border: 0 !important;
+    background: transparent !important;
   }
 
   #print-root .tag-weight-grid {
