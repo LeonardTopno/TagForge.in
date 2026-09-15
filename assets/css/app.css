@@ -1834,11 +1834,20 @@ th {
 
   body * {
     display: none !important;
+    visibility: hidden !important;
+  }
+
+  .print-bundle,
+  .print-offscreen,
+  .tag-stage {
+    display: none !important;
+    visibility: hidden !important;
   }
 
   #print-root,
   #print-root * {
     display: revert !important;
+    visibility: visible !important;
     border: 0 !important;
     outline: 0 !important;
     box-shadow: none !important;

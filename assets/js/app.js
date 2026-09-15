@@ -152,6 +152,8 @@
   // bottom gets clipped by overflow). Shop Y still fine-tunes via top (+ down / − up).
   const TVS_VERTICAL_COMPENSATION_MM = 0;
   const TVS_PRINT_PAD_TOP_MM = 3.5;
+  // Physical face often shows empty left; nudge print content left inside the page.
+  const TVS_PRINT_SHIFT_LEFT_MM = 6;
 
   function printOffsetsMm(shop, forPrint) {
     const x = Number(shop && shop.horizontal_offset_mm) || 0;
@@ -160,7 +162,7 @@
       return { x: x, y: y };
     }
     return {
-      x: x,
+      x: x - TVS_PRINT_SHIFT_LEFT_MM,
       y: y + TVS_VERTICAL_COMPENSATION_MM,
     };
   }
@@ -182,6 +184,9 @@
     const faceStyle = forPrint
       ? ''
       : ' style="flex:0 0 ' + faceWidth + 'mm;width:' + faceWidth + 'mm;max-width:' + faceWidth + 'mm;"';
+    const foldMark = forPrint
+      ? ''
+      : '<div class="tag-fold-mark" aria-hidden="true" title="Fold line"></div>';
     const tail = forPrint ? '' : '<div class="tag-tail" aria-hidden="true"></div>';
     return (
       '<article class="print-tag" style="' + style + '">' +
@@ -193,7 +198,7 @@
               '<span class="tag-weight-row">Nt.Wt: ' + formatWeight(tag.net_weight) + '</span>' +
             '</div>' +
           '</div>' +
-          '<div class="tag-fold-mark" aria-hidden="true" title="Fold line"></div>' +
+          foldMark +
           '<div class="tag-panel tag-panel-right" aria-label="Right panel: item, purity, shop logo">' +
             '<div class="tag-back">' +
               '<span class="tag-back-item">' + escapeHtml(tagItemLabel(tag.item_name, tag.category).toUpperCase()) + '</span>' +
@@ -400,9 +405,7 @@
         '<td><button type="button" data-action="reprint" data-id="' + tag.id + '"><i class="bi bi-printer"></i> Reprint</button></td>' +
       '</tr>';
     }).join('');
-    const hiddenPrint = state.activeTag
-      ? '<div class="print-bundle print-offscreen">' + printableTagHtml(state.activeTag, state.shop) + '</div>'
-      : '';
+    const hiddenPrint = '';
     return '<section class="table-panel"><table class="table"><thead><tr><th>Tag</th><th>Item</th><th>Created at</th><th>Gross</th><th>Net</th><th>Prints</th><th></th></tr></thead><tbody>' +
       rows + '</tbody></table></section>' + hiddenPrint;
   }
@@ -508,7 +511,7 @@
             '<div><span>Manufacturer / model</span><strong>TVS Electronics · LP 46 NEO</strong></div>' +
             '<div><span>Tag paper type</span><strong>Jewellery hang tag · single-side print, fold at centre (sticker back)</strong></div></div>' +
           '<p class="settings-help">Both panels print on the same face. Fold on the centre mark so the sticker backs meet. Select <strong>TVS LP 46 NEO</strong> in the browser print dialog (Margins <strong>None</strong>, Scale <strong>100%</strong>).</p>' +
-          '<p class="settings-help">Driver stock must stay <strong>64.0 × 12.0 mm</strong> (printable face), <strong>Portrait</strong>, Labels With Gaps (keep gap ~3 mm). Advanced Options: Horizontal <strong>0.0 mm</strong>, Vertical <strong>0.0 mm</strong>. Chrome: open More settings → Margins <strong>None</strong>, Scale <strong>100%</strong> (not Default). Print pads content ~3.5 mm down so Grs.Wt is not clipped; fine-tune with X/Y (+ right/down, − left/up).</p>' +
+          '<p class="settings-help">Driver stock must stay <strong>64.0 × 12.0 mm</strong>, <strong>Portrait</strong>, Labels With Gaps (gap ~3 mm). Advanced Options H/V <strong>0.0 mm</strong>. Chrome → More settings: Margins <strong>None</strong>, Scale <strong>100%</strong>. Print uses one face only (no fold/tail) so weights are not duplicated, pads ~3.5 mm down and shifts ~6 mm left; fine-tune with X/Y.</p>' +
           '<form data-action="save-tag" class="form-grid compact">' +
             '<label>Tag prefix<input class="form-control" name="tag_prefix" value="' + escapeHtml(draft.tag_prefix) + '"></label>' +
             '<label>Width mm (face)<input class="form-control" name="tag_width_mm" type="number" step="0.1" value="' + escapeHtml(draft.tag_width_mm) + '"></label>' +
@@ -671,13 +674,21 @@
     styleEl.textContent =
       '@media print {' +
         '@page { size: ' + width + 'mm ' + height + 'mm; margin: 0; }' +
-        'html, body, #print-root { width: ' + width + 'mm !important; height: ' + height + 'mm !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; }' +
-        '#print-root .print-tag { display: block !important; width: ' + width + 'mm !important; height: ' + height + 'mm !important; left: ' + offsets.x + 'mm !important; top: ' + offsets.y + 'mm !important; margin: 0 !important; border-radius: 1mm !important; overflow: hidden !important; background: #ffffff !important; }' +
-        '#print-root .tag-printable-face { width: 100% !important; height: 100% !important; border-radius: 1mm !important; overflow: hidden !important; background: #ffffff !important; }' +
-        '#print-root .tag-panel { padding-top: ' + TVS_PRINT_PAD_TOP_MM + 'mm !important; padding-bottom: 0.2mm !important; align-items: start !important; }' +
-        '#print-root .tag-back { justify-content: flex-start !important; gap: 0.35mm !important; padding-top: 0 !important; }' +
-        '#print-root .tag-tail { display: none !important; }' +
-        '#print-root .tag-panel-left { padding-left: 0.3mm !important; justify-items: start !important; }' +
+        'html, body { width: ' + width + 'mm !important; height: ' + height + 'mm !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; background: #fff !important; }' +
+        'body * { visibility: hidden !important; }' +
+        '.print-bundle, .print-offscreen, .tag-stage, .tag-stage * { display: none !important; visibility: hidden !important; }' +
+        '#print-root, #print-root * { visibility: visible !important; }' +
+        '#print-root { display: block !important; position: absolute !important; left: 0 !important; top: 0 !important; width: ' + width + 'mm !important; height: ' + height + 'mm !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; background: #fff !important; }' +
+        '#print-root .print-tag { display: block !important; position: absolute !important; width: ' + width + 'mm !important; height: ' + height + 'mm !important; left: ' + offsets.x + 'mm !important; top: ' + offsets.y + 'mm !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; background: #fff !important; border: 0 !important; box-shadow: none !important; }' +
+        '#print-root .tag-printable-face { display: grid !important; grid-template-columns: 1.15fr 0.85fr !important; width: 100% !important; height: 100% !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; background: #fff !important; border: 0 !important; }' +
+        '#print-root .tag-fold-mark, #print-root .tag-tail { display: none !important; }' +
+        '#print-root .tag-panel { display: grid !important; align-items: start !important; padding: ' + TVS_PRINT_PAD_TOP_MM + 'mm 0.4mm 0.2mm 0 !important; overflow: hidden !important; }' +
+        '#print-root .tag-panel-left { justify-items: start !important; padding-left: 0 !important; }' +
+        '#print-root .tag-panel-right { justify-items: center !important; }' +
+        '#print-root .tag-weight-grid { display: flex !important; flex-direction: column !important; align-items: flex-start !important; gap: 0.15mm !important; width: auto !important; max-width: 100% !important; }' +
+        '#print-root .tag-weight-row { display: block !important; white-space: nowrap !important; overflow: hidden !important; line-height: 1.15 !important; }' +
+        '#print-root .tag-back { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: flex-start !important; gap: 0.3mm !important; padding: 0 !important; }' +
+        '#print-root .tag-back-logo { display: block !important; max-width: 80% !important; max-height: 3.2mm !important; object-fit: contain !important; }' +
       '}';
   }
 
