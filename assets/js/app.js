@@ -147,8 +147,9 @@
 
   // Preview shows face + tail guide. Print uses face size only (matches TVS stock 64×12).
   const TAG_TAIL_MM = 18;
-  // Seagull/TVS Advanced Options often ships Vertical Offset at +3.0 mm (shifts print down).
-  const TVS_VERTICAL_COMPENSATION_MM = -3;
+  // With driver Vertical Offset at 0.0 mm, do not apply an extra up-shift (a prior −3 mm
+  // compensation clipped Grs.Wt off the top of the 12 mm face). Positive Y = down.
+  const TVS_VERTICAL_COMPENSATION_MM = 0;
 
   function printOffsetsMm(shop, forPrint) {
     const x = Number(shop && shop.horizontal_offset_mm) || 0;
@@ -505,7 +506,7 @@
             '<div><span>Manufacturer / model</span><strong>TVS Electronics · LP 46 NEO</strong></div>' +
             '<div><span>Tag paper type</span><strong>Jewellery hang tag · single-side print, fold at centre (sticker back)</strong></div></div>' +
           '<p class="settings-help">Both panels print on the same face. Fold on the centre mark so the sticker backs meet. Select <strong>TVS LP 46 NEO</strong> in the browser print dialog (Margins <strong>None</strong>, Scale <strong>100%</strong>).</p>' +
-          '<p class="settings-help">Driver stock must stay <strong>64.0 × 12.0 mm</strong> (printable face), Landscape, Labels With Gaps (keep gap ~3 mm). Do not set stock to 82 mm — that breaks gap sensing. Advanced Options: Horizontal <strong>0.0 mm</strong>, Vertical <strong>0.0 mm</strong> preferred (TagForge still applies <strong>−3 mm</strong> up if Vertical stays at +3). Fine-tune with X/Y (+ right/down, − left/up).</p>' +
+          '<p class="settings-help">Driver stock must stay <strong>64.0 × 12.0 mm</strong> (printable face), <strong>Portrait</strong>, Labels With Gaps (keep gap ~3 mm). Advanced Options: Horizontal <strong>0.0 mm</strong>, Vertical <strong>0.0 mm</strong>. Chrome: Margins <strong>None</strong>, Scale <strong>100%</strong> (not Default). Fine-tune with X/Y (+ right/down, − left/up).</p>' +
           '<form data-action="save-tag" class="form-grid compact">' +
             '<label>Tag prefix<input class="form-control" name="tag_prefix" value="' + escapeHtml(draft.tag_prefix) + '"></label>' +
             '<label>Width mm (face)<input class="form-control" name="tag_width_mm" type="number" step="0.1" value="' + escapeHtml(draft.tag_width_mm) + '"></label>' +
