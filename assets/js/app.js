@@ -698,10 +698,10 @@
         '#print-root .tag-panel { display: grid !important; align-items: center !important; padding: ' + TVS_PRINT_PAD_TOP_MM + 'mm 0.5mm ' + TVS_PRINT_PAD_TOP_MM + 'mm 0.4mm !important; overflow: hidden !important; }' +
         '#print-root .tag-panel-left { justify-items: start !important; padding-left: ' + TVS_PRINT_PAD_LEFT_MM + 'mm !important; padding-right: 0.6mm !important; }' +
         '#print-root .tag-panel-right { justify-items: center !important; padding-left: 0.4mm !important; padding-right: ' + TVS_PRINT_PAD_RIGHT_MM + 'mm !important; }' +
-        '#print-root .tag-weight-grid { display: flex !important; flex-direction: column !important; align-items: flex-start !important; gap: 0.2mm !important; width: auto !important; max-width: 100% !important; }' +
-        '#print-root .tag-weight-row { display: block !important; white-space: nowrap !important; overflow: visible !important; line-height: 1.2 !important; }' +
+        '#print-root .tag-weight-grid { display: flex !important; flex-direction: column !important; align-items: flex-start !important; gap: 0.2mm !important; width: auto !important; max-width: 100% !important; font-size: 8pt !important; }' +
+        '#print-root .tag-weight-row { display: block !important; white-space: nowrap !important; overflow: visible !important; line-height: 1.2 !important; font-size: 8pt !important; }' +
         '#print-root .tag-back { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; gap: 0.3mm !important; padding: 0 !important; max-width: 100% !important; box-sizing: border-box !important; }' +
-        '#print-root .tag-back-item, #print-root .tag-back-purity { max-width: 100% !important; overflow: hidden !important; text-overflow: clip !important; }' +
+        '#print-root .tag-back-item, #print-root .tag-back-purity, #print-root .tag-back-number { max-width: 100% !important; overflow: hidden !important; text-overflow: clip !important; font-size: 8pt !important; line-height: 1.15 !important; }' +
         '#print-root .tag-back-logo { display: block !important; max-width: 72% !important; max-height: 3mm !important; object-fit: contain !important; }' +
       '}';
   }
