@@ -174,9 +174,9 @@
     const requested = Number(shop && shop.font_size_pt) || 8;
     if (!forPrint) return requested;
     const height = Number(shop && shop.tag_height_mm) || 18;
-    // Cap print size on short tags so three weight lines still fit; 8 pt on 12 mm.
-    if (height <= 12) return Math.min(requested, 8);
-    if (height <= 15) return Math.min(requested, 9);
+    // Cap print size on short tags so three weight lines still fit; 7 pt both panels.
+    if (height <= 12) return Math.min(requested, 7);
+    if (height <= 15) return Math.min(requested, 8);
     return requested;
   }
 
@@ -524,7 +524,7 @@
             '<div><span>Manufacturer / model</span><strong>TVS Electronics · LP 46 NEO</strong></div>' +
             '<div><span>Tag paper type</span><strong>Jewellery hang tag · single-side print, fold at centre (sticker back)</strong></div></div>' +
           '<p class="settings-help">Both panels print on the same face. Fold on the centre mark so the sticker backs meet. Select <strong>TVS LP 46 NEO</strong> in the browser print dialog (Margins <strong>None</strong>, Scale <strong>100%</strong>).</p>' +
-          '<p class="settings-help">Driver stock: <strong>64.0 × 12.0 mm</strong>, <strong>Portrait</strong>, Labels With Gaps (~3 mm). Advanced Options: Horizontal <strong>0 to −2 mm</strong>, Vertical <strong>+2 to +3 mm</strong> if tops clip. Chrome → Margins <strong>None</strong>, Scale <strong>100%</strong>. Print insets left weights ~2.8 mm and right panel ~3.8 mm; print font capped at <strong>8 pt</strong> on 12 mm tags.</p>' +
+          '<p class="settings-help">Driver stock: <strong>64.0 × 12.0 mm</strong>, <strong>Portrait</strong>, Labels With Gaps (~3 mm). Advanced Options: Horizontal <strong>0 to −2 mm</strong>, Vertical <strong>+2 to +3 mm</strong> if tops clip. Chrome → Margins <strong>None</strong>, Scale <strong>100%</strong>. Print insets left weights ~2.8 mm and right panel ~3.8 mm; print font is <strong>7 pt</strong> on both panels for 12 mm tags.</p>' +
           '<form data-action="save-tag" class="form-grid compact">' +
             '<label>Tag prefix<input class="form-control" name="tag_prefix" value="' + escapeHtml(draft.tag_prefix) + '"></label>' +
             '<label>Width mm (face)<input class="form-control" name="tag_width_mm" type="number" step="0.1" value="' + escapeHtml(draft.tag_width_mm) + '"></label>' +
@@ -698,10 +698,10 @@
         '#print-root .tag-panel { display: grid !important; align-items: center !important; padding: ' + TVS_PRINT_PAD_TOP_MM + 'mm 0.5mm ' + TVS_PRINT_PAD_TOP_MM + 'mm 0.4mm !important; overflow: hidden !important; }' +
         '#print-root .tag-panel-left { justify-items: start !important; padding-left: ' + TVS_PRINT_PAD_LEFT_MM + 'mm !important; padding-right: 0.6mm !important; }' +
         '#print-root .tag-panel-right { justify-items: center !important; padding-left: 0.4mm !important; padding-right: ' + TVS_PRINT_PAD_RIGHT_MM + 'mm !important; }' +
-        '#print-root .tag-weight-grid { display: flex !important; flex-direction: column !important; align-items: flex-start !important; gap: 0.2mm !important; width: auto !important; max-width: 100% !important; font-size: 8pt !important; }' +
-        '#print-root .tag-weight-row { display: block !important; white-space: nowrap !important; overflow: visible !important; line-height: 1.2 !important; font-size: 8pt !important; }' +
+        '#print-root .tag-weight-grid { display: flex !important; flex-direction: column !important; align-items: flex-start !important; gap: 0.2mm !important; width: auto !important; max-width: 100% !important; font-size: 7pt !important; }' +
+        '#print-root .tag-weight-row { display: block !important; white-space: nowrap !important; overflow: visible !important; line-height: 1.2 !important; font-size: 7pt !important; }' +
         '#print-root .tag-back { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; gap: 0.3mm !important; padding: 0 !important; max-width: 100% !important; box-sizing: border-box !important; }' +
-        '#print-root .tag-back-item, #print-root .tag-back-purity, #print-root .tag-back-number { max-width: 100% !important; overflow: hidden !important; text-overflow: clip !important; font-size: 8pt !important; line-height: 1.15 !important; }' +
+        '#print-root .tag-back-item, #print-root .tag-back-purity, #print-root .tag-back-number { max-width: 100% !important; overflow: hidden !important; text-overflow: clip !important; font-size: 7pt !important; line-height: 1.15 !important; }' +
         '#print-root .tag-back-logo { display: block !important; max-width: 72% !important; max-height: 3mm !important; object-fit: contain !important; }' +
       '}';
   }
