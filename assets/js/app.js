@@ -147,11 +147,13 @@
 
   // Preview shows face + tail guide. Print uses face size only (matches TVS stock 64×12).
   const TAG_TAIL_MM = 18;
-  // Physical TVS prints often sit high on the face (tops clipped). Pad down inside the
-  // page; keep left shift at 0 in code — use driver Horizontal Offset (−1 to −2 mm only).
-  // Driver H=−4 clipped "Grs."/"Stn." off the left edge.
+  // Physical TVS often clips the first glyph on each weight line (G/S/N) and the right
+  // edge of the item name when content sits flush to the page edge. Inset inside the face.
+  // Keep code left-shift at 0; driver Horizontal Offset should be about 0 to −2 mm (not −4).
   const TVS_VERTICAL_COMPENSATION_MM = 0;
   const TVS_PRINT_PAD_TOP_MM = 2.4;
+  const TVS_PRINT_PAD_LEFT_MM = 2.8;
+  const TVS_PRINT_PAD_RIGHT_MM = 1.6;
   const TVS_PRINT_SHIFT_LEFT_MM = 0;
 
   function printOffsetsMm(shop, forPrint) {
@@ -520,7 +522,7 @@
             '<div><span>Manufacturer / model</span><strong>TVS Electronics · LP 46 NEO</strong></div>' +
             '<div><span>Tag paper type</span><strong>Jewellery hang tag · single-side print, fold at centre (sticker back)</strong></div></div>' +
           '<p class="settings-help">Both panels print on the same face. Fold on the centre mark so the sticker backs meet. Select <strong>TVS LP 46 NEO</strong> in the browser print dialog (Margins <strong>None</strong>, Scale <strong>100%</strong>).</p>' +
-          '<p class="settings-help">Driver stock: <strong>64.0 × 12.0 mm</strong>, <strong>Portrait</strong>, Labels With Gaps (~3 mm). Advanced Options: Horizontal try <strong>−1.5 to −2.0 mm</strong> only (not −4 — that clips Grs./Stn.); Vertical try <strong>+2.0 to +3.0 mm</strong> if tops clip. Chrome → Margins <strong>None</strong>, Scale <strong>100%</strong>. Print font capped at <strong>7 pt</strong> on 12 mm tags. Fine-tune further with TagForge X/Y.</p>' +
+          '<p class="settings-help">Driver stock: <strong>64.0 × 12.0 mm</strong>, <strong>Portrait</strong>, Labels With Gaps (~3 mm). Advanced Options: Horizontal <strong>0 to −2 mm</strong> (if first letters like G/S/N clip, move H toward <strong>0</strong> — do not use −4). Vertical <strong>+2 to +3 mm</strong> if tops clip. Chrome → Margins <strong>None</strong>, Scale <strong>100%</strong>. Print insets weights ~2.8 mm from the left so labels stay readable.</p>' +
           '<form data-action="save-tag" class="form-grid compact">' +
             '<label>Tag prefix<input class="form-control" name="tag_prefix" value="' + escapeHtml(draft.tag_prefix) + '"></label>' +
             '<label>Width mm (face)<input class="form-control" name="tag_width_mm" type="number" step="0.1" value="' + escapeHtml(draft.tag_width_mm) + '"></label>' +
@@ -692,11 +694,12 @@
         '#print-root .tag-printable-face { display: grid !important; grid-template-columns: 1.15fr 0.85fr !important; width: 100% !important; height: 100% !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; background: #fff !important; border: 0 !important; }' +
         '#print-root .tag-fold-mark, #print-root .tag-tail { display: none !important; }' +
         '#print-root .tag-panel { display: grid !important; align-items: center !important; padding: ' + TVS_PRINT_PAD_TOP_MM + 'mm 0.5mm ' + TVS_PRINT_PAD_TOP_MM + 'mm 0.4mm !important; overflow: hidden !important; }' +
-        '#print-root .tag-panel-left { justify-items: start !important; padding-left: 0.4mm !important; }' +
-        '#print-root .tag-panel-right { justify-items: center !important; }' +
+        '#print-root .tag-panel-left { justify-items: start !important; padding-left: ' + TVS_PRINT_PAD_LEFT_MM + 'mm !important; padding-right: 0.6mm !important; }' +
+        '#print-root .tag-panel-right { justify-items: center !important; padding-right: ' + TVS_PRINT_PAD_RIGHT_MM + 'mm !important; }' +
         '#print-root .tag-weight-grid { display: flex !important; flex-direction: column !important; align-items: flex-start !important; gap: 0.2mm !important; width: auto !important; max-width: 100% !important; }' +
         '#print-root .tag-weight-row { display: block !important; white-space: nowrap !important; overflow: visible !important; line-height: 1.2 !important; }' +
-        '#print-root .tag-back { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; gap: 0.35mm !important; padding: 0 !important; }' +
+        '#print-root .tag-back { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; gap: 0.35mm !important; padding: 0 !important; max-width: 100% !important; }' +
+        '#print-root .tag-back-item, #print-root .tag-back-purity { max-width: 100% !important; overflow: hidden !important; text-overflow: clip !important; }' +
         '#print-root .tag-back-logo { display: block !important; max-width: 80% !important; max-height: 3.2mm !important; object-fit: contain !important; }' +
       '}';
   }
