@@ -147,10 +147,11 @@
 
   // Preview shows face + tail guide. Print uses face size only (matches TVS stock 64×12).
   const TAG_TAIL_MM = 18;
-  // Small top pad so Grs.Wt clears the face edge without pushing Nt.Wt off a 12 mm tag.
-  // Do NOT shift the whole page left — that clipped "Grs."/"Stn." to ".Wt"/"Wt".
+  // Physical TVS prints often sit high on the face (tops clipped). Pad down inside the
+  // page; keep left shift at 0 in code — use driver Horizontal Offset (−1 to −2 mm only).
+  // Driver H=−4 clipped "Grs."/"Stn." off the left edge.
   const TVS_VERTICAL_COMPENSATION_MM = 0;
-  const TVS_PRINT_PAD_TOP_MM = 1.2;
+  const TVS_PRINT_PAD_TOP_MM = 2.4;
   const TVS_PRINT_SHIFT_LEFT_MM = 0;
 
   function printOffsetsMm(shop, forPrint) {
@@ -519,7 +520,7 @@
             '<div><span>Manufacturer / model</span><strong>TVS Electronics · LP 46 NEO</strong></div>' +
             '<div><span>Tag paper type</span><strong>Jewellery hang tag · single-side print, fold at centre (sticker back)</strong></div></div>' +
           '<p class="settings-help">Both panels print on the same face. Fold on the centre mark so the sticker backs meet. Select <strong>TVS LP 46 NEO</strong> in the browser print dialog (Margins <strong>None</strong>, Scale <strong>100%</strong>).</p>' +
-          '<p class="settings-help">Driver stock: <strong>64.0 × 12.0 mm</strong>, <strong>Portrait</strong>, Labels With Gaps (~3 mm). Advanced Options H/V <strong>0.0</strong>. Chrome → Margins <strong>None</strong>, Scale <strong>100%</strong>. Print font is capped at <strong>7 pt</strong> when height is 12 mm so all three weights fit. Fine-tune with X/Y (+ right/down, − left/up).</p>' +
+          '<p class="settings-help">Driver stock: <strong>64.0 × 12.0 mm</strong>, <strong>Portrait</strong>, Labels With Gaps (~3 mm). Advanced Options: Horizontal try <strong>−1.5 to −2.0 mm</strong> only (not −4 — that clips Grs./Stn.); Vertical try <strong>+2.0 to +3.0 mm</strong> if tops clip. Chrome → Margins <strong>None</strong>, Scale <strong>100%</strong>. Print font capped at <strong>7 pt</strong> on 12 mm tags. Fine-tune further with TagForge X/Y.</p>' +
           '<form data-action="save-tag" class="form-grid compact">' +
             '<label>Tag prefix<input class="form-control" name="tag_prefix" value="' + escapeHtml(draft.tag_prefix) + '"></label>' +
             '<label>Width mm (face)<input class="form-control" name="tag_width_mm" type="number" step="0.1" value="' + escapeHtml(draft.tag_width_mm) + '"></label>' +
