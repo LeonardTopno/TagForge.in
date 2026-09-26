@@ -65,8 +65,25 @@
     return Number.isFinite(parsed) ? parsed.toFixed(3) : '0.000';
   }
 
+  // Force purity as NNK/NNN (e.g. 22K/916): two digits, auto K/, then three digits.
+  function normalizePurityInput(raw) {
+    const upper = String(raw || '').toUpperCase();
+    // Backspacing the "/" leaves "22K" — treat as removing the second karat digit.
+    let digits = upper.replace(/\D/g, '').slice(0, 5);
+    if (/^\d{2}K$/.test(upper)) {
+      digits = digits.slice(0, 1);
+    }
+    if (digits.length === 0) return '';
+    if (digits.length === 1) return digits;
+    return digits.slice(0, 2) + 'K/' + digits.slice(2);
+  }
+
+  function isCompletePurity(value) {
+    return /^\d{2}K\/\d{3}$/.test(String(value || ''));
+  }
+
   function formatPurity(value) {
-    const purity = String(value || '').trim().replace(/\s*\/\s*/g, '/').toUpperCase();
+    const purity = normalizePurityInput(value);
     if (!purity) return '—';
     return 'Purity: ' + purity;
   }
@@ -389,9 +406,9 @@
                 '</label>';
               }).join('') +
             '</div></div>' +
-            '<label>Gross weight<input class="form-control" data-field="gross_weight" step="0.001" type="number" value="' + escapeHtml(state.form.gross_weight) + '"></label>' +
-            '<label>Stone weight<input class="form-control" data-field="stone_weight" step="0.001" type="number" value="' + escapeHtml(state.form.stone_weight) + '"></label>' +
-            '<label>Purity<input class="form-control purity-input" data-field="purity" placeholder="22K/916" autocapitalize="characters" spellcheck="false" value="' + escapeHtml(state.form.purity) + '"></label>' +
+            '<label>Gross weight (in grams)<input class="form-control" data-field="gross_weight" step="0.001" type="number" value="' + escapeHtml(state.form.gross_weight) + '"></label>' +
+            '<label>Stone weight (in grams)<input class="form-control" data-field="stone_weight" step="0.001" type="number" value="' + escapeHtml(state.form.stone_weight) + '"></label>' +
+            '<label>Purity<input class="form-control purity-input" data-field="purity" placeholder="22K/916" maxlength="7" inputmode="numeric" pattern="\\d{2}K/\\d{3}" title="Format: 22K/916" autocapitalize="characters" spellcheck="false" value="' + escapeHtml(normalizePurityInput(state.form.purity)) + '"></label>' +
           '</div>' +
           '<div class="net-box"><span>Net weight</span><strong>' + calculateNet(state.form) + ' g</strong></div>' +
           '<div class="button-row">' +
@@ -657,6 +674,13 @@
   }
 
   function saveTag(printAfter) {
+    const purity = normalizePurityInput(state.form.purity);
+    state.form.purity = purity;
+    if (purity && !isCompletePurity(purity)) {
+      state.error = 'Purity must look like 22K/916 (two digits, K/, three digits).';
+      render();
+      return;
+    }
     state.busy = true;
     state.error = '';
     render();
@@ -1128,7 +1152,7 @@
       state.activeTag = null;
       let value = event.target.value;
       if (field === 'purity') {
-        value = value.toUpperCase();
+        value = normalizePurityInput(value);
         if (event.target.value !== value) {
           event.target.value = value;
         }
@@ -1177,6 +1201,26 @@
         state.logoError = err.message;
         render();
       });
+    }
+  });
+
+  root.addEventListener('keydown', function (event) {
+    const field = event.target.getAttribute && event.target.getAttribute('data-field');
+    if (field === 'purity' && event.key === 'Backspace') {
+      const el = event.target;
+      const start = el.selectionStart;
+      const end = el.selectionEnd;
+      const v = el.value;
+      // Deleting the auto "K/" block: step back one karat digit instead of getting stuck on "22K/".
+      if (start === end && /^\d{2}K\/$/.test(v) && start > 2) {
+        event.preventDefault();
+        const next = v.slice(0, 1);
+        el.value = next;
+        state.form.purity = next;
+        el.setSelectionRange(next.length, next.length);
+        const preview = root.querySelector('.print-bundle');
+        if (preview && state.shop) preview.innerHTML = printableTagHtml(draftTag(), state.shop);
+      }
     }
   });
 
