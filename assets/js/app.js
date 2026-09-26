@@ -208,9 +208,9 @@
         '<div class="tag-printable-face"' + faceStyle + '>' +
           '<div class="tag-panel tag-panel-left" aria-label="Left panel: weights">' +
             '<div class="tag-weight-grid">' +
-              '<span class="tag-weight-row">Gr. Wt. ' + formatWeight(tag.gross_weight) + 'g</span>' +
-              '<span class="tag-weight-row">St. Wt. ' + formatWeight(tag.stone_weight) + 'g</span>' +
-              '<span class="tag-weight-row">Nt. Wt. ' + formatWeight(tag.net_weight) + 'g</span>' +
+              '<span class="tag-weight-row">Gr. Wt. ' + formatWeight(tag.gross_weight) + ' g</span>' +
+              '<span class="tag-weight-row">St. Wt. ' + formatWeight(tag.stone_weight) + ' g</span>' +
+              '<span class="tag-weight-row">Nt. Wt. ' + formatWeight(tag.net_weight) + ' g</span>' +
             '</div>' +
           '</div>' +
           foldMark +
